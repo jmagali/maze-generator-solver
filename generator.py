@@ -26,7 +26,7 @@ def generate_maze():
             stack.append(neighbor)
         else:
             stack.pop()
-
+    
     return grid, width, height
 
 # You need the current and neighbor bc you need to remove the walls on both cells

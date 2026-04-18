@@ -25,3 +25,4 @@ def draw_maze(grid, width, height):
     ax.axis("off")
     
     plt.show()
+    
