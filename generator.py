@@ -2,8 +2,13 @@ from cell import Cell
 import random
 
 def generate_maze():
-    width = int(input("Enter width: "))
-    height = int(input("Enter height: "))
+    while True:
+        try:
+            width = int(input("Enter width: "))
+            height = int(input("Enter height: "))
+            break
+        except ValueError:
+            continue
 
     grid = create_grid(width, height)
 
