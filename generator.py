@@ -2,60 +2,32 @@ from cell import Cell
 import random
 
 def generate_maze():
-    height = int(input("Enter the height: "))
-    width = int(input("Enter the width: "))
-    
+    width = int(input("Enter width: "))
+    height = int(input("Enter height: "))
+
     grid = create_grid(width, height)
+
     start = grid[0][0]
-    recursive_backtrack(start, grid, [])
-    print_maze(grid, width, height)
-    
-def print_maze(grid, width, height):
-    start = (0, 0)
-    end = (width - 1, height - 1)
+    stack = [start]
 
-    for y in range(height):
-        top = ""
-        middle = ""
+    while stack:
+        current = stack[-1]
+        current.visited = True
 
-        for x in range(width):
-            cell = grid[x][y]
+        neighbors = find_neighbords(current, grid, width, height)
+        unvisited = [n for n in neighbors if not n.visited]
 
-            top += "+---" if cell.walls["top"] else "+   "
+        if unvisited:
+            neighbor = random.choice(unvisited)
 
-            # Entry + exit handling
-            if (x, y) == start:
-                middle += "    "   # open entrance
-            elif (x, y) == end:
-                middle += "   "    # open exit
-            else:
-                middle += "|   " if cell.walls["left"] else "    "
-
-        top += "+"
-
-        # Right border handling for exit row
-        if y == height - 1:
-            middle += " "  # open right edge visually
+            remove_walls(current, neighbor)
+            
+            neighbor.visited = True
+            stack.append(neighbor)
         else:
-            middle += "|"
+            stack.pop()
 
-        print(top)
-        print(middle)
-
-    print("+---" * width + "+")
-    
-    
-def recursive_backtrack(cell, grid, result):
-    cell.visited = True
-    result.append(cell)
-    
-    neighbors = find_neighbords(cell, grid, len(grid), len(grid[0]))
-    random.shuffle(neighbors)
-    
-    for neighbor in neighbors:
-        if not neighbor.visited:
-            remove_walls(cell, neighbor)
-            recursive_backtrack(neighbor, grid, result)
+    return grid, width, height
 
 # You need the current and neighbor bc you need to remove the walls on both cells
 def remove_walls(current, neighbor):
@@ -70,25 +42,17 @@ def remove_walls(current, neighbor):
         current.walls["right"] = False
         neighbor.walls["left"] = False
 
-    elif dy == 1:  # neighbor is ABOVE current
-        current.walls["top"] = False
-        neighbor.walls["bottom"] = False
-
-    elif dy == -1:  # neighbor is BELOW current
+    elif dy == 1:  # neighbor is BELOW current
         current.walls["bottom"] = False
         neighbor.walls["top"] = False
+
+    elif dy == -1:  # neighbor is ABOVE current
+        current.walls["top"] = False
+        neighbor.walls["bottom"] = False
         
 
 def create_grid(width, height):
-    grid = []
-    
-    for x in range(width):
-        row = []
-        for y in range(height):
-            row.append(Cell(x,y))
-        grid.append(row)
-        
-    return grid
+    return [[Cell(x, y) for y in range(height)] for x in range(width)]
     
 def find_neighbords(cell, grid, width, height):
     dirs = [(1,0), (0,1), (-1,0), (0,-1)]
@@ -104,6 +68,3 @@ def find_neighbords(cell, grid, width, height):
             neighbors.append(grid[nx][ny])
             
     return neighbors
-
-if __name__ == "__main__":
-    generate_maze()
