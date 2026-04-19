@@ -1,12 +1,17 @@
 # maze-generator-solver
 
-<i>A procedural maze generation project using depth-first search and backtracking.</i>
+<i>A procedural maze generation and solving visualizer using classic graph traversal algorithms.</i>
 
-Generate clean, randomized mazes using classic graph traversal algorithms.
+Generate randomized mazes using depth-first search (DFS) and solve them using breadth-first search (BFS), with animated visualization of the solution path.
 
-This project builds a grid-based maze by carving paths between cells, ensuring a fully connected structure with no isolated regions. The result is a perfect maze — one with exactly one path between any two points.
+<p align="center">  <img src="img/maze_solver.gif" alt="Maze Solver Animation"/> <img src="img/maze3.png" alt="Generated Maze"/> </p>
 
-<p align="center"> <img src="img/maze1.png" alt="Generated Maze""/> </p> <p align="center"> <img src="img/maze2.png" alt="Generated Maze"/> </p> <p align="center"> <img src="img/maze3.png" alt="Generated Maze"/> </p>
+## Features
+- Maze generation using Depth-First Search (DFS) with backtracking
+- Guaranteed solvable "perfect" mazes (exactly one path between any two cells)
+- Maze solving using Breadth-First Search (BFS) for shortest path
+- Animated path visualization using Matplotlib
+- Adaptive animation speed based on maze size
 
 ## Installation
 ### Requirements
