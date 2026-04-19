@@ -42,18 +42,16 @@ def remove_walls(current, neighbor):
     if dx == 1:  # neighbor is LEFT of current
         current.walls["left"] = False
         neighbor.walls["right"] = False
-
     elif dx == -1:  # neighbor is RIGHT of current
         current.walls["right"] = False
         neighbor.walls["left"] = False
 
-    elif dy == 1:  # neighbor is BELOW current
-        current.walls["bottom"] = False
-        neighbor.walls["top"] = False
-
-    elif dy == -1:  # neighbor is ABOVE current
+    if dy == 1:  # neighbor is ABOVE current
         current.walls["top"] = False
         neighbor.walls["bottom"] = False
+    elif dy == -1:  # neighbor is BELOW current
+        current.walls["bottom"] = False
+        neighbor.walls["top"] = False
         
 
 def create_grid(width, height):
