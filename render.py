@@ -45,23 +45,19 @@ def draw_maze_base(ax, grid, width, height):
                 
     ax.plot([0, 0], [height-1, height], color="green", linewidth=3)
     ax.plot([width, width], [0, 1], color="red", linewidth=3)
-
-
-def animate_solution(grid, width, height, path):
+    
+def animate_solution(grid, width, height, path, save=False):
     fig, ax = plt.subplots()
 
     draw_maze_base(ax, grid, width, height)
 
-    # highlight layer (this is the key part)
     highlights = []
 
     def update(i):
-        # remove old highlight patches
         for h in highlights:
             h.remove()
         highlights.clear()
 
-        # draw path up to i
         for (x, y) in path[:i]:
             rect = plt.Rectangle(
                 (x, height - 1 - y),
@@ -77,17 +73,19 @@ def animate_solution(grid, width, height, path):
     
     cells = width * height
 
-    ani = animation.FuncAnimation(
+    fig.ani = animation.FuncAnimation(
         fig,
         update,
         frames=len(path) + 1,
         interval=max(0, min(120, 1000 / cells)),
-        blit=True,
+        blit=False,
         repeat=False
     )
 
     ax.set_aspect("equal")
     ax.axis("off")
 
+    if save:
+        fig.ani.save("maze_solver.gif", writer="pillow", fps=30)
+
     plt.show()
-    
