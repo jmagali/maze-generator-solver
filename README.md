@@ -4,7 +4,7 @@
 
 Generate randomized mazes using depth-first search (DFS) and solve them using breadth-first search (BFS), with animated visualization of the solution path.
 
-<p align="center">  <img src="img/maze_solver.gif" alt="Maze Solver Animation"/> <img src="img/maze3.png" alt="Generated Maze"/> </p>
+<p align="center">  <img src="img/maze_solver.gif" alt="Maze Solver Animation"/> <img src="img/maze_generation.gif" alt="Maze Generation Animation"/> </p>
 
 ## Features
 - Maze generation using Depth-First Search (DFS) with backtracking
