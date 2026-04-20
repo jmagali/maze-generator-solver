@@ -1,6 +1,6 @@
 from collections import deque
 
-def solve(grid, width, height):
+def solve_bfs(grid, width, height):
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
     # reset visited

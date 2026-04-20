@@ -10,7 +10,7 @@ from generator import (
     generate_maze_binary_tree
 )
 
-from solver import solve
+from solver import solve_bfs
 from render import draw_maze_base
 
 
@@ -28,6 +28,14 @@ class MazeApp:
 
         self.solve_index = 0
         self.solve_after_id = None
+        
+        self.anim_grid = None
+        self.anim_index = 0
+        self.gen_after_id = None
+        self.speed = 10
+        
+        self.animate_generation = tk.BooleanVar(value=True)
+        self.animate_solution = tk.BooleanVar(value=True)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -81,6 +89,18 @@ class MazeApp:
         self.algorithm.pack(fill="x", pady=(0, 20))
 
         ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+        
+        ttk.Checkbutton(
+            inner,
+            text="Animate Generation",
+            variable=self.animate_generation
+        ).pack(anchor="w", pady=(10, 0))
+
+        ttk.Checkbutton(
+            inner,
+            text="Animate Solution",
+            variable=self.animate_solution
+        ).pack(anchor="w", pady=(0, 10))
 
         ttk.Button(
             inner,
@@ -105,6 +125,9 @@ class MazeApp:
         if self.solve_after_id:
             self.root.after_cancel(self.solve_after_id)
 
+        if self.gen_after_id:
+            self.root.after_cancel(self.gen_after_id)
+
         self.root.quit()
         self.root.destroy()
 
@@ -125,13 +148,93 @@ class MazeApp:
             self.grid, self.width, self.height, self.steps = generate_maze_binary_tree(width, height)
 
         self.path = None
+
+        if self.animate_generation.get():
+            self.start_generation_animation()
+        else:
+            self.anim_grid = None
+            self.render_grid()
+        
+    def create_empty_grid(self):
+        new_grid = []
+
+        for x in range(self.width):
+            column = []
+            for y in range(self.height):
+                cell = self.grid[x][y].__class__(x, y)
+                column.append(cell)
+            new_grid.append(column)
+
+        return new_grid
+    
+    def start_generation_animation(self):
+        if self.gen_after_id:
+            self.root.after_cancel(self.gen_after_id)
+
+        self.anim_grid = self.create_empty_grid()
+        self.anim_index = 0
+
+        self.animate_generation_step()
+        
+    def animate_generation_step(self):
+        if self.anim_index >= len(self.steps):
+            # Finish -> switch to real grid
+            self.anim_grid = None
+            self.render_grid()
+            return
+
+        current, neighbor = self.steps[self.anim_index]
+
+        c = self.anim_grid[current.x][current.y]
+        n = self.anim_grid[neighbor.x][neighbor.y]
+
+        dx = current.x - neighbor.x
+        dy = current.y - neighbor.y
+
+        if dx == 1:
+            c.walls["left"] = False
+            n.walls["right"] = False
+        elif dx == -1:
+            c.walls["right"] = False
+            n.walls["left"] = False
+
+        if dy == 1:
+            c.walls["top"] = False
+            n.walls["bottom"] = False
+        elif dy == -1:
+            c.walls["bottom"] = False
+            n.walls["top"] = False
+
+        self.anim_index += 1
+
         self.render_grid()
+
+        self.gen_after_id = self.root.after(self.speed, self.animate_generation_step)
 
     def solve_maze(self):
         if not self.grid:
             return
 
-        self.path = solve(self.grid, self.width, self.height)
+        self.path = solve_bfs(self.grid, self.width, self.height)
+
+        if not self.animate_solution.get():
+            # Instant draw
+            self.render_grid()
+
+            for x, y in self.path:
+                self.ax.add_patch(
+                    plt.Rectangle(
+                        (x, self.height - 1 - y),
+                        1, 1,
+                        color="red",
+                        alpha=0.3
+                    )
+                )
+
+            self.canvas.draw()
+            return
+
+        # Animate
         self.solve_index = 0
 
         if self.solve_after_id:
@@ -159,13 +262,15 @@ class MazeApp:
         self.canvas.draw()
 
         self.solve_index += 1
-        self.solve_after_id = self.root.after(20, self.animate_solution_step)
+        self.solve_after_id = self.root.after(self.speed, self.animate_solution_step)
 
     def render_grid(self):
         self.ax.clear()
 
-        if self.grid:
-            draw_maze_base(self.ax, self.grid, self.width, self.height)
+        grid_to_draw = self.anim_grid if self.anim_grid else self.grid
+
+        if grid_to_draw:
+            draw_maze_base(self.ax, grid_to_draw, self.width, self.height)
 
         self.ax.set_aspect("equal")
         self.ax.axis("off")
