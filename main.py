@@ -13,7 +13,6 @@ from generator import (
 from solver import solve_bfs
 from render import draw_maze_base
 
-
 class MazeApp:
     def __init__(self, root):
         self.root = root
@@ -36,6 +35,32 @@ class MazeApp:
         
         self.animate_generation = tk.BooleanVar(value=True)
         self.animate_solution = tk.BooleanVar(value=True)
+        
+        self.themes = {
+            "light": {
+                "bg": "#f5f5f5",
+                "panel": "#ffffff",
+                "text": "#000000",
+                "actions_text": "#000000",
+                "accent": "#4a90e2",
+                "maze_bg": "#ffffff",
+                "wall": "#000000",
+                "path": "red"
+            },
+            "dark": {
+                "bg": "#1e1e1e",
+                "panel": "#2b2b2b",
+                "actions_text": "#000000",
+                "text": "#ffffff",
+                "accent": "#6aa9ff",
+                "maze_bg": "#1e1e1e",
+                "wall": "#ffffff",
+                "path": "#ff6b6b"
+            }
+        }
+
+        self.current_theme = "light"
+        self.dark_mode = tk.BooleanVar(value=False)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -64,7 +89,7 @@ class MazeApp:
         inner = tk.Frame(control_frame, padx=20, pady=20)
         inner.pack(fill="both", expand=True)
 
-        ttk.Label(inner, text="Maze Size", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+        ttk.Label(inner, text="Maze Size", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
 
         ttk.Label(inner, text="Width").pack(anchor="w")
         self.width_entry = ttk.Entry(inner)
@@ -74,7 +99,7 @@ class MazeApp:
         self.height_entry = ttk.Entry(inner)
         self.height_entry.pack(fill="x", pady=(0, 20))
 
-        ttk.Label(inner, text="Algorithm", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+        ttk.Label(inner, text="Algorithm", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
 
         ttk.Label(inner, text="Maze Generation").pack(anchor="w")
         self.algorithm = ttk.Combobox(
@@ -88,13 +113,13 @@ class MazeApp:
         self.algorithm["height"] = 5
         self.algorithm.pack(fill="x", pady=(0, 20))
 
-        ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+        ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w")
         
         ttk.Checkbutton(
             inner,
             text="Animate Generation",
             variable=self.animate_generation
-        ).pack(anchor="w", pady=(10, 0))
+        ).pack(anchor="w", pady=(5, 0))
 
         ttk.Checkbutton(
             inner,
@@ -112,14 +137,63 @@ class MazeApp:
             inner,
             text="Solve Maze",
             command=self.solve_maze
-        ).pack(fill="x")
+        ).pack(fill="x", pady=(0, 10))
+        
+        ttk.Label(inner, text="Aesthetics", style="Section.TLabel").pack(anchor="w")
+        
+        ttk.Checkbutton(
+            inner,
+            text="Dark Mode",
+            variable=self.dark_mode,
+            command=self.toggle_theme
+        ).pack(anchor="w", pady=(5, 0))
 
         self.fig, self.ax = plt.subplots()
-        self.ax.set_aspect("equal")
-        self.ax.axis("off")
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.main_frame)
         self.canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
+        
+        self.apply_theme()
+        
+    def apply_theme(self):
+        theme = self.themes[self.current_theme]
+
+        # Root + frames
+        self.root.configure(bg=theme["bg"])
+        self.main_frame.configure(bg=theme["bg"])
+
+        for widget in [self.main_frame]:
+            widget.configure(bg=theme["bg"])
+
+        def recursive_color(widget):
+            try:
+                widget.configure(bg=theme["bg"])
+            except:
+                pass
+            for child in widget.winfo_children():
+                recursive_color(child)
+
+        recursive_color(self.main_frame)
+
+        # ttk styling
+        style = ttk.Style()
+        style.configure("TFrame", background=theme["bg"])
+        style.configure("TLabel", background=theme["bg"], foreground=theme["text"])
+        style.configure("TButton", foreground=theme["actions_text"])
+        style.configure("TCheckbutton", background=theme["bg"], foreground=theme["text"])
+
+        # Matplotlib
+        self.fig.patch.set_facecolor(theme["maze_bg"])
+        self.ax.set_facecolor(theme["maze_bg"])
+
+        self.render_grid()
+        
+        self.ax.set_aspect("equal")
+        self.ax.axis("off")
+        
+    def toggle_theme(self):
+        self.current_theme = "dark" if self.dark_mode.get() else "light"
+        self.apply_theme()
 
     def on_close(self):
         if self.solve_after_id:
@@ -226,7 +300,7 @@ class MazeApp:
                     plt.Rectangle(
                         (x, self.height - 1 - y),
                         1, 1,
-                        color="red",
+                        color=self.themes[self.current_theme]["path"],
                         alpha=0.3
                     )
                 )
@@ -254,7 +328,7 @@ class MazeApp:
                 plt.Rectangle(
                     (x, self.height - 1 - y),
                     1, 1,
-                    color="red",
+                    color=self.themes[self.current_theme]["path"],
                     alpha=0.3
                 )
             )
@@ -270,13 +344,25 @@ class MazeApp:
         grid_to_draw = self.anim_grid if self.anim_grid else self.grid
 
         if grid_to_draw:
-            draw_maze_base(self.ax, grid_to_draw, self.width, self.height)
+            theme = self.themes[self.current_theme]
 
-        self.ax.set_aspect("equal")
-        self.ax.axis("off")
-        self.canvas.draw()
+            draw_maze_base(
+                self.ax,
+                grid_to_draw,
+                self.width,
+                self.height,
+                wall_color=theme["wall"],
+                entrance_color="green",
+                exit_color="red",
+                wall_width=2
+            )
+
+            self.ax.set_aspect("equal")
+            self.ax.axis("off")
+            self.canvas.draw()
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = MazeApp(root)
     root.mainloop()
+    

@@ -12,24 +12,38 @@ def draw_maze(grid, width, height):
     
     plt.show(block=True)
 
-def draw_maze_base(ax, grid, width, height):
+def draw_maze_base(
+    ax,
+    grid,
+    width,
+    height,
+    wall_color="black",
+    entrance_color="green",
+    exit_color="red",
+    wall_width=2
+):
     for x in range(width):
         for y in range(height):
             cell = grid[x][y]
             draw_y = height - 1 - y
-            
-            # If there is a wall in any direction, draw it
+
             if cell.walls["top"]:
-                ax.plot([x, x+1], [draw_y+1, draw_y+1], "k", lw=5)
+                ax.plot([x, x+1], [draw_y+1, draw_y+1], color=wall_color, lw=wall_width)
+
             if cell.walls["bottom"]:
-                ax.plot([x, x+1], [draw_y, draw_y], "k", lw=5)
+                ax.plot([x, x+1], [draw_y, draw_y], color=wall_color, lw=wall_width)
+
             if cell.walls["left"]:
-                ax.plot([x, x], [draw_y, draw_y+1], "k", lw=5)
+                ax.plot([x, x], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+
             if cell.walls["right"]:
-                ax.plot([x+1, x+1], [draw_y, draw_y+1], "k", lw=5)
-                
-    ax.plot([0, 0], [height-1, height], color="green", linewidth=3)
-    ax.plot([width, width], [0, 1], color="red", linewidth=3)
+                ax.plot([x+1, x+1], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+
+    # Entrance (top-left)
+    ax.plot([0, 0], [height-1, height], color=entrance_color, linewidth=wall_width)
+
+    # Exit (bottom-right)
+    ax.plot([width, width], [0, 1], color=exit_color, linewidth=wall_width)
     
 # def animate_solution(grid, width, height, path, save=False):
 #     fig, ax = plt.subplots()
