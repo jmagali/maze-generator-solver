@@ -40,7 +40,7 @@ class MazeApp:
         self.main_frame.columnconfigure(1, weight=1)  # canvas
         self.main_frame.rowconfigure(0, weight=1)
 
-        control_frame = tk.Frame(self.main_frame, width=220)
+        control_frame = tk.Frame(self.main_frame, width=400, padx=15, pady=15)
         control_frame.grid(row=0, column=0, sticky="ns")
         control_frame.grid_propagate(False)
 
