@@ -9,4 +9,11 @@ class Cell:
             "bottom": True,
         }
         self.visited = False
-        
+    
+    def reset_walls(self):
+        self.walls = {
+            "top": True,
+            "bottom": True,
+            "left": True,
+            "right": True
+        }

@@ -4,6 +4,7 @@ import random
 def generate_maze_prims():
     width, height = get_dimensions()
     grid = create_grid(width, height)
+    steps = []
     
     start = grid[random.randint(0, width - 1)][random.randint(0, height - 1)]
     start.visited = True
@@ -20,18 +21,20 @@ def generate_maze_prims():
 
         # Connect the cell to the visited cells and remove it from the frontier
         remove_walls(current, neighbor)
+        steps.append((current, neighbor))
         frontier.remove(current)
         current.visited = True
         
         # Expand the frontier from the new cell
         frontier += [n for n in neighbors if not n.visited and not n in frontier]
         
-    return grid, width, height
+    return grid, width, height, steps
    
 
 def generate_maze_dfs():
     width, height = get_dimensions()
     grid = create_grid(width, height)
+    steps = []
 
     start = grid[0][0]
     stack = [start]
@@ -47,13 +50,14 @@ def generate_maze_dfs():
             neighbor = random.choice(unvisited)
 
             remove_walls(current, neighbor)
+            steps.append((current, neighbor))
             
             neighbor.visited = True
             stack.append(neighbor)
         else:
             stack.pop()
     
-    return grid, width, height
+    return grid, width, height, steps
 
 # You need the current and neighbor bc you need to remove the walls on both cells
 def remove_walls(current, neighbor):
