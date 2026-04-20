@@ -1,15 +1,36 @@
 from cell import Cell
 import random
 
-def generate_maze():
-    while True:
-        try:
-            width = int(input("Enter width: "))
-            height = int(input("Enter height: "))
-            break
-        except ValueError:
-            continue
+def generate_maze_prims():
+    width, height = get_dimensions()
+    grid = create_grid(width, height)
+    
+    start = grid[random.randint(0, width - 1)][random.randint(0, height - 1)]
+    start.visited = True
+    
+    # Let the frontier be all adj cells not visited
+    frontier = find_neighbords(start, grid, width, height)
+    
+    while frontier:
+        # Take a cell from the frontier and pair it to an adj visited neighbor
+        current = random.choice(frontier)
+        neighbors = find_neighbords(current, grid, width, height)
+        visited_neighbors = [n for n in neighbors if n.visited]
+        neighbor = random.choice(visited_neighbors)
 
+        # Connect the cell to the visited cells and remove it from the frontier
+        remove_walls(current, neighbor)
+        frontier.remove(current)
+        current.visited = True
+        
+        # Expand the frontier from the new cell
+        frontier += [n for n in neighbors if not n.visited and not n in frontier]
+        
+    return grid, width, height
+   
+
+def generate_maze_dfs():
+    width, height = get_dimensions()
     grid = create_grid(width, height)
 
     start = grid[0][0]
@@ -52,6 +73,17 @@ def remove_walls(current, neighbor):
     elif dy == -1:  # neighbor is BELOW current
         current.walls["bottom"] = False
         neighbor.walls["top"] = False
+        
+def get_dimensions():
+        while True:
+            try:
+                width = int(input("Enter width: "))
+                height = int(input("Enter height: "))
+                break
+            except ValueError:
+                continue
+        
+        return width, height
         
 
 def create_grid(width, height):
