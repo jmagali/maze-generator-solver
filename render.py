@@ -104,7 +104,7 @@ def animate_generation(grid, width, height, steps, save=False):
     )
     
     if save:
-        fig.ani.save("maze_solver.gif", writer="pillow", fps=30)
+        ani.save("maze_generation.gif", writer="pillow", fps=30)
 
     plt.show(block=False)
     plt.close(fig)
