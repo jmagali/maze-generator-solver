@@ -1,6 +1,37 @@
 from cell import Cell
 import random
 
+def generate_maze_binary_tree():
+    width, height = get_dimensions()
+    grid = create_grid(width, height)
+    steps = []
+    
+    for y in range(height):
+        for x in range(width):
+            right = x + 1
+            down = y + 1
+            
+            options = []
+            
+            if right < width:
+                options.append("r")
+            if down < height:
+                options.append("d")
+            
+            if options:
+                option = random.choice(options)
+            
+                if option == "r":
+                    grid[x][y].walls["right"] = False
+                    grid[right][y].walls["left"] = False
+                    steps.append((grid[x][y], grid[right][y]))
+                elif option == 'd':
+                    grid[x][y].walls["bottom"] = False
+                    grid[x][down].walls["top"] = False
+                    steps.append((grid[x][y], grid[x][down]))
+                
+    return grid, width, height, steps
+
 def generate_maze_prims():
     width, height = get_dimensions()
     grid = create_grid(width, height)
@@ -29,7 +60,6 @@ def generate_maze_prims():
         frontier += [n for n in neighbors if not n.visited and not n in frontier]
         
     return grid, width, height, steps
-   
 
 def generate_maze_dfs():
     width, height = get_dimensions()

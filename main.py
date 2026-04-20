@@ -1,23 +1,24 @@
 from render import draw_maze, animate_solution, animate_generation
 from solver import solve
-from generator import generate_maze_dfs, generate_maze_prims
+from generator import generate_maze_dfs, generate_maze_prims, generate_maze_binary_tree
 
 while True:
     print("----------------------------------------------------------------------")
-    generation = input("Enter 1/2 for DFS or Prims: ")
+    generation = input("Enter 1/2/3 for DFS/Prims/Binary Tree: ")
     visualize_generation = input("Visualize generation? (Y/N): ")
     mode = input("Enter 'D' for Draw Mode or 'S' for Solve Mode: ")
     print("----------------------------------------------------------------------")
 
-    if generation in ["1", "2"] and mode.upper() in ["D", "S"]:
+    if generation in ["1", "2", "3"] and mode.upper() in ["D", "S"]:
         break
 
 # ---------------- GENERATION ----------------
 if generation == "1":
     grid, width, height, steps = generate_maze_dfs()
-else:
+elif generation == "2":
     grid, width, height, steps = generate_maze_prims()
-
+else:
+    grid, width, height, steps = generate_maze_binary_tree()
 
 # OPTIONAL: animate generation
 if visualize_generation.upper() == "Y":
