@@ -1,16 +1,20 @@
 # maze-generator-solver
 
-<i>A procedural maze generation and solving visualizer using classic graph traversal algorithms.</i>
+<i>A procedural maze generator and solver with animated visualization using graph traversal algorithms.</i>
 
-Generate randomized mazes using depth-first search (DFS) and solve them using breadth-first search (BFS), with animated visualization of the solution path.
+This project generates perfect mazes using Depth-First Search (DFS) and Prim’s algorithm, then solves them using Breadth-First Search (BFS). Both generation and solving can be visualized step-by-step and exported as GIF animations.
 
 <p align="center">  <img src="img/maze_solver.gif" alt="Maze Solver Animation"/> <img src="img/maze_generation.gif" alt="Maze Generation Animation"/> </p>
 
 ## Features
-- Maze generation using Depth-First Search (DFS) with backtracking
-- Guaranteed solvable "perfect" mazes (exactly one path between any two cells)
-- Maze solving using Breadth-First Search (BFS) for shortest path
-- Animated path visualization using Matplotlib
+- Maze generation using:
+   - Depth-First Search (DFS) backtracking
+   - Randomized Prim’s algorithm
+- Guaranteed perfect mazes (one unique path between any two cells)
+- Maze solving using Breadth-First Search (BFS)
+- Step-by-step generation and solving animations
+- Red path highlighting for solution visualization
+- GIF export for both generation and solving
 - Adaptive animation speed based on maze size
 
 ## Installation
