@@ -48,7 +48,7 @@ class MazeApp:
                 "path": "red"
             },
             "dark": {
-                "bg": "#1e1e1e",
+                "bg": "#444444",
                 "panel": "#2b2b2b",
                 "actions_text": "#000000",
                 "text": "#ffffff",
