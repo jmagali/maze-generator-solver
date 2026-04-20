@@ -13,10 +13,11 @@ from generator import (
 from solver import solve
 from render import draw_maze_base
 
+
 class MazeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Maze-Generator-Solver")
+        self.root.title("Maze Generator + Solver")
         self.root.geometry("1000x600")
 
         self.grid = None
@@ -25,52 +26,73 @@ class MazeApp:
         self.steps = None
         self.path = None
 
-        self.anim_index = 0
         self.solve_index = 0
-
-        self.gen_after_id = None
         self.solve_after_id = None
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except:
+            pass
+
+        style.configure("TEntry", padding=8)
+        style.configure("TCombobox", padding=6)
+        style.configure("TButton", font=("Arial", 11), padding=6)
+        style.configure("Section.TLabel", font=("Arial", 13, "bold"))
+
         self.main_frame = tk.Frame(root)
         self.main_frame.pack(fill="both", expand=True)
 
-        self.main_frame.columnconfigure(0, weight=0)  # controls
-        self.main_frame.columnconfigure(1, weight=1)  # canvas
+        self.main_frame.columnconfigure(0, weight=0)
+        self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
 
-        control_frame = tk.Frame(self.main_frame, width=400, padx=15, pady=15)
+        control_frame = tk.Frame(self.main_frame, width=240)
         control_frame.grid(row=0, column=0, sticky="ns")
         control_frame.grid_propagate(False)
 
+        inner = tk.Frame(control_frame, padx=20, pady=20)
+        inner.pack(fill="both", expand=True)
+
+        ttk.Label(inner, text="Maze Size", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(inner, text="Width").pack(anchor="w")
+        self.width_entry = ttk.Entry(inner)
+        self.width_entry.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(inner, text="Height").pack(anchor="w")
+        self.height_entry = ttk.Entry(inner)
+        self.height_entry.pack(fill="x", pady=(0, 20))
+
+        ttk.Label(inner, text="Algorithm", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(inner, text="Maze Generation").pack(anchor="w")
         self.algorithm = ttk.Combobox(
-            control_frame,
+            inner,
             values=["DFS", "Prim's", "Binary Tree"],
-            state="readonly"
+            state="readonly",
+            font=("Arial", 11),
+            width=18
         )
         self.algorithm.current(0)
-        self.algorithm.pack(pady=10, fill="x")
+        self.algorithm["height"] = 5
+        self.algorithm.pack(fill="x", pady=(0, 20))
 
-        tk.Label(control_frame, text="Width").pack()
-        self.width_entry = tk.Entry(control_frame)
-        self.width_entry.pack(fill="x", padx=5)
+        ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
 
-        tk.Label(control_frame, text="Height").pack()
-        self.height_entry = tk.Entry(control_frame)
-        self.height_entry.pack(fill="x", padx=5)
-
-        tk.Button(
-            control_frame,
+        ttk.Button(
+            inner,
             text="Generate Maze",
             command=self.generate_maze
-        ).pack(pady=10, fill="x")
+        ).pack(fill="x", pady=(0, 10))
 
-        tk.Button(
-            control_frame,
+        ttk.Button(
+            inner,
             text="Solve Maze",
             command=self.solve_maze
-        ).pack(pady=5, fill="x")
+        ).pack(fill="x")
 
         self.fig, self.ax = plt.subplots()
         self.ax.set_aspect("equal")
@@ -80,9 +102,6 @@ class MazeApp:
         self.canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
 
     def on_close(self):
-        if self.gen_after_id:
-            self.root.after_cancel(self.gen_after_id)
-
         if self.solve_after_id:
             self.root.after_cancel(self.solve_after_id)
 
