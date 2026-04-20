@@ -1,8 +1,7 @@
 from cell import Cell
 import random
 
-def generate_maze_binary_tree():
-    width, height = get_dimensions()
+def generate_maze_binary_tree(width, height):
     grid = create_grid(width, height)
     steps = []
     
@@ -32,8 +31,7 @@ def generate_maze_binary_tree():
                 
     return grid, width, height, steps
 
-def generate_maze_prims():
-    width, height = get_dimensions()
+def generate_maze_prims(width, height):
     grid = create_grid(width, height)
     steps = []
     
@@ -61,8 +59,7 @@ def generate_maze_prims():
         
     return grid, width, height, steps
 
-def generate_maze_dfs():
-    width, height = get_dimensions()
+def generate_maze_dfs(width, height):
     grid = create_grid(width, height)
     steps = []
 
@@ -107,18 +104,6 @@ def remove_walls(current, neighbor):
     elif dy == -1:  # neighbor is BELOW current
         current.walls["bottom"] = False
         neighbor.walls["top"] = False
-        
-def get_dimensions():
-        while True:
-            try:
-                width = int(input("Enter width: "))
-                height = int(input("Enter height: "))
-                break
-            except ValueError:
-                continue
-        
-        return width, height
-        
 
 def create_grid(width, height):
     return [[Cell(x, y) for y in range(height)] for x in range(width)]
