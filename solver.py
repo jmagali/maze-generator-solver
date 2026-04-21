@@ -52,7 +52,6 @@ def solve_bfs(grid, width, height):
                 continue
 
             # Mark before enqueing and updates path
-            # TODO: inefficiency in creating new list in the queue
             neighbor.visited = True
             q.append((neighbor, path + [neighbor]))
 

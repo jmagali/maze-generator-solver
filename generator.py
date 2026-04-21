@@ -52,11 +52,11 @@ def generate_maze_prims(width, height):
     
     # Let the frontier be all adjacent cells not visited
     # Prim's expans from known cells to unknown cells
-    frontier = find_neighbords(start, grid, width, height)
+    frontier = set(find_neighbords(start, grid, width, height))
     
     while frontier:
         # Take a cell from the frontier and pair it to an adjacent visited neighbor
-        current = random.choice(frontier)
+        current = random.choice(list(frontier))
         neighbors = find_neighbords(current, grid, width, height)
         visited_neighbors = [n for n in neighbors if n.visited]
         neighbor = random.choice(visited_neighbors)
@@ -70,8 +70,7 @@ def generate_maze_prims(width, height):
         current.visited = True
         
         # Expand the frontier from the new cell
-        # TODO: Possible inefficiency; O(n) operation, maybe use set?
-        frontier += [n for n in neighbors if not n.visited and not n in frontier]
+        frontier |= set(n for n in neighbors if not n.visited and n not in frontier)
         
     return grid, width, height, steps
 

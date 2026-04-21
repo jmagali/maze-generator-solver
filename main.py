@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk # Modern widgect styling (better than standard tkinter)
+from tkinter import ttk, messagebox # Modern widgect styling (better than standard tkinter)
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
@@ -12,6 +12,8 @@ from generator import (
 
 from solver import solve_bfs
 from render import draw_maze_base
+
+import math
 
 # GUI logic for the entire application
 class MazeApp:
@@ -33,7 +35,7 @@ class MazeApp:
         self.anim_grid = None # Grid being animated during generation
         self.anim_index = 0 # Step within generation animation
         self.gen_after_id = None
-        self.speed = 10 # Animation delay; TODO: Either this is too slow or animation is unoptimized
+        self.speed = 10 # Animation delay (ms); TODO: Either this is too slow or animation is unoptimized
         
         # Track whether generation and solutions should be animated
         self.animate_generation = tk.BooleanVar(value=True)
@@ -111,10 +113,12 @@ class MazeApp:
         ttk.Label(inner, text="Width").pack(anchor="w")
         self.width_entry = ttk.Entry(inner)
         self.width_entry.pack(fill="x", pady=(0, 10))
+        self.width_entry.bind("<Key>", lambda event: self.remove_error_styling(event, self.width_entry))
 
         ttk.Label(inner, text="Height").pack(anchor="w")
         self.height_entry = ttk.Entry(inner)
         self.height_entry.pack(fill="x", pady=(0, 20))
+        self.height_entry.bind("<Key>", lambda event: self.remove_error_styling(event, self.height_entry))
 
         # Algorithm section
         ttk.Label(inner, text="Algorithm", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
@@ -233,6 +237,9 @@ class MazeApp:
         style.configure("TLabel", background=theme["bg"], foreground=theme["text"])
         style.configure("TButton", foreground=theme["actions_text"])
         style.configure("TCheckbutton", background=theme["bg"], foreground=theme["text"])
+        style.configure("TEntry", background=theme["panel"], foreground=theme["text"], fieldbackground=theme["panel"])
+        style.configure("TCombobox", background=theme["panel"], foreground=theme["actions_text"], fieldbackground=theme["panel"])
+        style.configure("Error.TEntry", background="#ff4b4b", foreground="#ffffff", fieldbackground="#ff4b4b")
 
         # Matplotlib
         self.fig.patch.set_facecolor(theme["maze_bg"])
@@ -263,17 +270,52 @@ class MazeApp:
         # Stops the event loop and destroys the window
         self.root.quit()
         self.root.destroy()
-
+        
+    def validate_dimensions(self):
+        error_messages = []
+        width, height = float('inf'), float('inf')
+        
+        # Check if entries are valid digits
+        try:
+            width = int(self.width_entry.get())
+        except ValueError:
+            self.width_entry.configure(style="Error.TEntry")
+            error_messages.append("Width must be a numeric integer.\n")
+            
+        try:
+            height = int(self.height_entry.get())
+        except ValueError:
+            self.height_entry.configure(style="Error.TEntry")
+            error_messages.append("Height must be a numeric integer.\n")
+            
+        if width < 1 and height < 1:
+            self.width_entry.configure(style="Error.TEntry")
+            error_messages.append("Maze must be at least 1x1.\n")
+        elif width < 1:
+            self.width_entry.configure(style="Error.TEntry")
+            error_messages.append("Maze must be at least 1x1.\n")
+        elif height < 1:
+            self.height_entry.configure(style="Error.TEntry")
+            error_messages.append("Maze must be at least 1x1.\n")
+        
+        # Remove error styling if there are no errors
+        if not error_messages:
+            self.width_entry.configure(style="TEntry")
+            self.height_entry.configure(style="TEntry")
+            return width, height, None
+        
+        return None, None, error_messages
+    
     def generate_maze(self):
         # Retrieve the selected algorithm from the combobox
         algo = self.generation_algorithm.get()
-
-        # Retrieve numeric dimensions or cancel generation if non-numeric
-        # TODO: Maybe show error if non-numeric dimensions are entered (Poor UX)
-        try:
-            width = int(self.width_entry.get())
-            height = int(self.height_entry.get())
-        except ValueError:
+        
+        # Validate both entries at once
+        width, height, errors = self.validate_dimensions()
+        
+        if errors:
+            error_message = "".join(errors)
+            messagebox.showerror("Input Error", error_message)
             return
 
         # Matches maze generation function to the respective combobox selection
@@ -399,26 +441,30 @@ class MazeApp:
             self.root.after_cancel(self.solve_after_id)
 
         self.animate_solution_step()
+        
+    def remove_error_styling(self, key, entry):
+        # Reset entry style on input:
+        entry.configure(style="TEntry")
 
     def animate_solution_step(self):
         # When the solution index is past the path length, exit
         if self.solve_index > len(self.path):
             return
-
-        # Redraw the maze, removing previous patches
-        self.render_grid()
-
-        # Draw every cell within the path
-        for i in range(self.solve_index):
-            x, y = self.path[i]
+            # Draw the initial maze
+            self.render_grid()
+        # Draw a solution cell each frame
+        else:
+            # Draw the intial grid
+            if self.solve_index == 0:
+                self.render_grid()
+                
+            x,y = self.path[self.solve_index]
             self.ax.add_patch(
-                plt.Rectangle(
-                    (x, self.height - 1 - y),
-                    1, 1,
-                    color=self.themes[self.current_theme]["path"],
-                    alpha=0.3
-                )
-            )
+                plt.Rectangle((x, self.height - y - 1), 
+                1,
+                1,
+                color=self.themes[self.current_theme]["path"],
+                alpha=0.3))
 
         self.canvas.draw()
 
