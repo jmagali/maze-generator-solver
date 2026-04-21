@@ -10,7 +10,11 @@ from generator import (
     generate_maze_binary_tree
 )
 
-from solver import solve_bfs
+from solver import (
+    solve_bfs,
+    solve_dfs
+)
+
 from render import draw_maze_base
 
 import math
@@ -28,6 +32,7 @@ class MazeApp:
         self.height = None
         self.steps = None # List of wall removals for animation
         self.path = None # Solution coordincates
+        self.solution_steps = []  # List of exploration/backtrack steps for solution animation
 
         self.solve_index = 0 # Current step within solution animation
         self.solve_after_id = None # Tkinter timer ID; allows for solution animation cancellation
@@ -143,12 +148,15 @@ class MazeApp:
         ttk.Label(inner, text="Solving").pack(anchor="w")
         self.solving_algorithm = ttk.Combobox(
             inner,
-            values=["BFS"],
+            values=["BFS", "DFS"],
             state="readonly",
             font=("Arial", 11),
             width=18
         )
         self.solving_algorithm.current(0)
+        
+        # Increase the font size of dropdown menu
+        self.root.option_add("*TCombobox*Listbox*Font", ("Arial", 11))
         
         # TODO: This is meant to expand the height of the dropdown. I don't think it did anything.
         self.solving_algorithm["height"] = 5
@@ -360,6 +368,9 @@ class MazeApp:
         # Reset the animation step (new animation starts at the beginning)
         self.anim_index = 0
 
+        # Draw the empty grid once
+        self.render_grid()
+        
         self.animate_generation_step()
         
     def animate_generation_step(self):
@@ -411,24 +422,44 @@ class MazeApp:
         if not self.grid:
             return
 
-        # TODO: When more solution algorithms are added, update with conditionals
-        self.path = solve_bfs(self.grid, self.width, self.height)
+        result = None
+        if algo == "BFS":
+            result = solve_bfs(self.grid, self.width, self.height)
+        elif algo == "DFS":
+            result = solve_dfs(self.grid, self.width, self.height)
+        
+        # Extract path and steps from the result
+        self.path = result["path"] if result else None
+        self.solution_steps = result["steps"] if result else []
 
         if not self.animate_solution.get():
             # Instant draw
             self.render_grid()
 
-            # Highlights each cell within the solution path
-            for x, y in self.path:
-                # Adds a coloured rectandle within the plot
-                self.ax.add_patch(
-                    plt.Rectangle(
-                        (x, self.height - 1 - y),
-                        1, 1,
-                        color=self.themes[self.current_theme]["path"],
-                        alpha=0.3
+            # Draw explored cells (exploration steps) in a lighter color
+            for step_type, x, y in self.solution_steps:
+                if step_type == "explore":
+                    self.ax.add_patch(
+                        plt.Rectangle(
+                            (x, self.height - 1 - y),
+                            1, 1,
+                            color=self.themes[self.current_theme]["path"],
+                            alpha=0.15
+                        )
                     )
-                )
+
+            # Highlights each cell within the solution path in a darker color
+            if self.path:
+                for x, y in self.path:
+                    # Adds a coloured rectandle within the plot
+                    self.ax.add_patch(
+                        plt.Rectangle(
+                            (x, self.height - 1 - y),
+                            1, 1,
+                            color=self.themes[self.current_theme]["path"],
+                            alpha=0.3
+                        )
+                    )
 
             # Immenediately updates the canvas
             self.canvas.draw()
@@ -447,24 +478,49 @@ class MazeApp:
         entry.configure(style="TEntry")
 
     def animate_solution_step(self):
-        # When the solution index is past the path length, exit
-        if self.solve_index > len(self.path):
-            return
-            # Draw the initial maze
+        # Initialize on first call
+        if self.solve_index == 0:
             self.render_grid()
-        # Draw a solution cell each frame
-        else:
-            # Draw the intial grid
+        
+        # Check if we have valid steps and path
+        if not self.path or not self.solution_steps:
             if self.solve_index == 0:
                 self.render_grid()
-                
-            x,y = self.path[self.solve_index]
-            self.ax.add_patch(
-                plt.Rectangle((x, self.height - y - 1), 
-                1,
-                1,
-                color=self.themes[self.current_theme]["path"],
-                alpha=0.3))
+                self.canvas.draw()
+            return
+        
+        total_steps = len(self.solution_steps) + len(self.path)
+        
+        # When the animation index is past the total steps, exit
+        if self.solve_index >= total_steps:
+            return
+        
+        # Draw exploration steps first (lighter color)
+        if self.solve_index < len(self.solution_steps):
+            step_type, x, y = self.solution_steps[self.solve_index]
+            if step_type == "explore":
+                self.ax.add_patch(
+                    plt.Rectangle((x, self.height - y - 1), 
+                    1, 1,
+                    color=self.themes[self.current_theme]["path"],
+                    alpha=0.15))
+            elif step_type == "backtrack":
+                # TODO: highlight backtracking differently if desired
+                self.ax.add_patch(
+                    plt.Rectangle((x, self.height - y - 1), 
+                    1, 1,
+                    color=self.themes[self.current_theme]["path"],
+                    alpha=0.05))
+        # Draw final solution path (darker color)
+        else:
+            path_index = self.solve_index - len(self.solution_steps)
+            if path_index < len(self.path):
+                x, y = self.path[path_index]
+                self.ax.add_patch(
+                    plt.Rectangle((x, self.height - y - 1), 
+                    1, 1,
+                    color=self.themes[self.current_theme]["path"],
+                    alpha=0.3))
 
         self.canvas.draw()
 
