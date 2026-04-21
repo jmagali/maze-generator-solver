@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk # Modern widgect styling (better than standard tkinter)
 
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
 
 from generator import (
     generate_maze_dfs,
@@ -13,8 +13,10 @@ from generator import (
 from solver import solve_bfs
 from render import draw_maze_base
 
+# GUI logic for the entire application
 class MazeApp:
     def __init__(self, root):
+        # Set-up the window (root), title, window size
         self.root = root
         self.root.title("Maze Generator + Solver")
         self.root.geometry("1000x600")
@@ -22,17 +24,18 @@ class MazeApp:
         self.grid = None
         self.width = None
         self.height = None
-        self.steps = None
-        self.path = None
+        self.steps = None # List of wall removals for animation
+        self.path = None # Solution coordincates
 
-        self.solve_index = 0
-        self.solve_after_id = None
+        self.solve_index = 0 # Current step within solution animation
+        self.solve_after_id = None # Tkinter timer ID; allows for solution animation cancellation
         
-        self.anim_grid = None
-        self.anim_index = 0
+        self.anim_grid = None # Grid being animated during generation
+        self.anim_index = 0 # Step within generation animation
         self.gen_after_id = None
-        self.speed = 10
+        self.speed = 10 # Animation delay; TODO: Either this is too slow or animation is unoptimized
         
+        # Track whether generation and solutions should be animated
         self.animate_generation = tk.BooleanVar(value=True)
         self.animate_solution = tk.BooleanVar(value=True)
         
@@ -59,38 +62,52 @@ class MazeApp:
             }
         }
 
+        # Current_theme is for rendering, dark_mode is for the checkbox UI
         self.current_theme = "light"
         self.dark_mode = tk.BooleanVar(value=False)
 
+        # Terminate the program and cancel pending animation supon window deletion
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        style = ttk.Style()
+        style = ttk.Style() # STyle manages for ttk widgets
+        
+        # Clam is a more modern theme
+        # Some OS cannot use theme; hence, encase in a try/except
         try:
             style.theme_use("clam")
         except:
             pass
 
+        # Configure properties for the used widgets
         style.configure("TEntry", padding=8)
         style.configure("TCombobox", padding=6)
         style.configure("TButton", font=("Arial", 11), padding=6)
-        style.configure("Section.TLabel", font=("Arial", 13, "bold"))
+        style.configure("Section.TLabel", font=("Arial", 13, "bold")) # Custom class for section headers
 
         self.main_frame = tk.Frame(root)
-        self.main_frame.pack(fill="both", expand=True)
+        self.main_frame.pack(fill="both", expand=True) # Expands to fill root window
 
+        # Left column remains fixed (control panel)
         self.main_frame.columnconfigure(0, weight=0)
+        
+        # Right column expands into extra space (maze display)
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
 
+        # Create fixed control frame within the left column of the main frame
         control_frame = tk.Frame(self.main_frame, width=240)
         control_frame.grid(row=0, column=0, sticky="ns")
-        control_frame.grid_propagate(False)
+        control_frame.grid_propagate(False) # Prevent frame from shrinking to fit children
 
+        # Adds 'breayjomg room' around controls
         inner = tk.Frame(control_frame, padx=20, pady=20)
         inner.pack(fill="both", expand=True)
 
+        # Maze size sections
+        # Ttk instead of standard tkinter for modern widgets that match clam
         ttk.Label(inner, text="Maze Size", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
 
+        # Entries allow user to type in values
         ttk.Label(inner, text="Width").pack(anchor="w")
         self.width_entry = ttk.Entry(inner)
         self.width_entry.pack(fill="x", pady=(0, 10))
@@ -99,26 +116,48 @@ class MazeApp:
         self.height_entry = ttk.Entry(inner)
         self.height_entry.pack(fill="x", pady=(0, 20))
 
+        # Algorithm section
         ttk.Label(inner, text="Algorithm", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
 
+        # Dropdown menu to prevent manual typing inputs
         ttk.Label(inner, text="Maze Generation").pack(anchor="w")
-        self.algorithm = ttk.Combobox(
+        self.generation_algorithm = ttk.Combobox(
             inner,
             values=["DFS", "Prim's", "Binary Tree"],
+            state="readonly", 
+            font=("Arial", 11),
+            width=18
+        )
+        
+        # Set initial combo option
+        self.generation_algorithm.current(0)
+        
+        # TODO: This is meant to expand the height of the dropdown. I don't think it did anything.
+        self.generation_algorithm["height"] = 5
+        self.generation_algorithm.pack(fill="x", pady=(0, 20))
+        
+        ttk.Label(inner, text="Solving").pack(anchor="w")
+        self.solving_algorithm = ttk.Combobox(
+            inner,
+            values=["BFS"],
             state="readonly",
             font=("Arial", 11),
             width=18
         )
-        self.algorithm.current(0)
-        self.algorithm["height"] = 5
-        self.algorithm.pack(fill="x", pady=(0, 20))
+        self.solving_algorithm.current(0)
+        
+        # TODO: This is meant to expand the height of the dropdown. I don't think it did anything.
+        self.solving_algorithm["height"] = 5
+        self.solving_algorithm.pack(fill="x", pady=(0, 20))
 
+        # Actions sections
         ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w")
         
+        # Checkbox widget for simplicity
         ttk.Checkbutton(
             inner,
             text="Animate Generation",
-            variable=self.animate_generation
+            variable=self.animate_generation # links to variable
         ).pack(anchor="w", pady=(5, 0))
 
         ttk.Checkbutton(
@@ -130,52 +169,65 @@ class MazeApp:
         ttk.Button(
             inner,
             text="Generate Maze",
-            command=self.generate_maze
-        ).pack(fill="x", pady=(0, 10))
+            command=self.generate_maze # Callback function when clicked
+        ).pack(fill="x", pady=(0, 5))
 
         ttk.Button(
             inner,
             text="Solve Maze",
             command=self.solve_maze
-        ).pack(fill="x", pady=(0, 10))
+        ).pack(fill="x", pady=(0, 5))
         
         ttk.Label(inner, text="Aesthetics", style="Section.TLabel").pack(anchor="w")
         
         ttk.Checkbutton(
             inner,
             text="Dark Mode",
-            variable=self.dark_mode,
-            command=self.toggle_theme
+            variable=self.dark_mode, # Sync to variable for state persistence
+            command=self.toggle_theme # Has a callback function because everythign must be redrawn instantly
         ).pack(anchor="w", pady=(5, 0))
 
+        # Matplotlib integration: creates the figure (window) and axes (drawing plot)
         self.fig, self.ax = plt.subplots()
 
+        # Embed the matplot figure within the tkinter main frame
+        # Save the canvas for updating during animation
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.main_frame)
+        
+        # Embed within the right column, allowing it to stretch in all directions
         self.canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
         
+        # Apply the initial theme (light mode) before display
         self.apply_theme()
         
     def apply_theme(self):
+        # Retrieve the colour dictionary for the current theme
         theme = self.themes[self.current_theme]
 
-        # Root + frames
+        # Set the background colours for the roots and main frame
         self.root.configure(bg=theme["bg"])
         self.main_frame.configure(bg=theme["bg"])
 
+        # Passes through all widgets in the frame, colouring their backgrounds
         for widget in [self.main_frame]:
             widget.configure(bg=theme["bg"])
 
+        # All levels must be coloured (nested widgets)
+        # TODOD: This rebuilts the tree each time the theme is applied; try caching
         def recursive_color(widget):
+            # Since some widgets do not have a background, errors must be handled
             try:
                 widget.configure(bg=theme["bg"])
             except:
                 pass
+            
+            # Walk along the widget tree
             for child in widget.winfo_children():
                 recursive_color(child)
 
         recursive_color(self.main_frame)
 
-        # ttk styling
+        # ttk styling; ttk is handles differently than tkinter
         style = ttk.Style()
         style.configure("TFrame", background=theme["bg"])
         style.configure("TLabel", background=theme["bg"], foreground=theme["text"])
@@ -186,34 +238,45 @@ class MazeApp:
         self.fig.patch.set_facecolor(theme["maze_bg"])
         self.ax.set_facecolor(theme["maze_bg"])
 
+        # Redraw the whole maze with new colours
         self.render_grid()
         
         self.ax.set_aspect("equal")
         self.ax.axis("off")
         
     def toggle_theme(self):
+        # Checks the dark mode boolean and sets the theme accordinly
         self.current_theme = "dark" if self.dark_mode.get() else "light"
+        
+        # Triggers window redrawing with new theme
         self.apply_theme()
 
     def on_close(self):
+        # Cancels pending animations by id
+        # Animations can persists after window closing without cancellation
         if self.solve_after_id:
             self.root.after_cancel(self.solve_after_id)
 
         if self.gen_after_id:
             self.root.after_cancel(self.gen_after_id)
 
+        # Stops the event loop and destroys the window
         self.root.quit()
         self.root.destroy()
 
     def generate_maze(self):
-        algo = self.algorithm.get()
+        # Retrieve the selected algorithm from the combobox
+        algo = self.generation_algorithm.get()
 
+        # Retrieve numeric dimensions or cancel generation if non-numeric
+        # TODO: Maybe show error if non-numeric dimensions are entered (Poor UX)
         try:
             width = int(self.width_entry.get())
             height = int(self.height_entry.get())
         except ValueError:
             return
 
+        # Matches maze generation function to the respective combobox selection
         if algo == "DFS":
             self.grid, self.width, self.height, self.steps = generate_maze_dfs(width, height)
         elif algo == "Prim's":
@@ -221,14 +284,17 @@ class MazeApp:
         else:
             self.grid, self.width, self.height, self.steps = generate_maze_binary_tree(width, height)
 
+        # Clears the previous solution; different mazes need different solutions
         self.path = None
 
+        # Animates the generation if selected by user
         if self.animate_generation.get():
             self.start_generation_animation()
         else:
             self.anim_grid = None
             self.render_grid()
-        
+    
+    # Create a fresh grid with all walls intact before removal in animation
     def create_empty_grid(self):
         new_grid = []
 
@@ -242,29 +308,37 @@ class MazeApp:
         return new_grid
     
     def start_generation_animation(self):
+        # Checks if an aniamtion is running; stop is before beginning a new one
         if self.gen_after_id:
             self.root.after_cancel(self.gen_after_id)
 
+        # Create a clean maze for step-by-step wall removal
         self.anim_grid = self.create_empty_grid()
+        
+        # Reset the animation step (new animation starts at the beginning)
         self.anim_index = 0
 
         self.animate_generation_step()
         
     def animate_generation_step(self):
+        # If the animation has finished, render the complete grid and exit
         if self.anim_index >= len(self.steps):
-            # Finish -> switch to real grid
             self.anim_grid = None
             self.render_grid()
             return
 
+        # Retrieve the current wall removal from steps list
         current, neighbor = self.steps[self.anim_index]
 
+        # Look up the cells in the animation grid (steps contains coords not Cells)
         c = self.anim_grid[current.x][current.y]
         n = self.anim_grid[neighbor.x][neighbor.y]
 
+        # Calculate direction to determine which walls to remove
         dx = current.x - neighbor.x
         dy = current.y - neighbor.y
 
+        # Carve the respective walls
         if dx == 1:
             c.walls["left"] = False
             n.walls["right"] = False
@@ -279,23 +353,32 @@ class MazeApp:
             c.walls["bottom"] = False
             n.walls["top"] = False
 
+        # Move to the next step and draw the maze with the current state
         self.anim_index += 1
-
         self.render_grid()
 
+        # Recall itself after the dealy (speed in ms)
+        # ID must be stored for cancellation
         self.gen_after_id = self.root.after(self.speed, self.animate_generation_step)
 
     def solve_maze(self):
+        # Retrieve the corresponding algorithm from the combobox
+        algo = self.solving_algorithm.get()
+        
+        # If the maze has not been generated, cancel the solution
         if not self.grid:
             return
 
+        # TODO: When more solution algorithms are added, update with conditionals
         self.path = solve_bfs(self.grid, self.width, self.height)
 
         if not self.animate_solution.get():
             # Instant draw
             self.render_grid()
 
+            # Highlights each cell within the solution path
             for x, y in self.path:
+                # Adds a coloured rectandle within the plot
                 self.ax.add_patch(
                     plt.Rectangle(
                         (x, self.height - 1 - y),
@@ -305,6 +388,7 @@ class MazeApp:
                     )
                 )
 
+            # Immenediately updates the canvas
             self.canvas.draw()
             return
 
@@ -317,11 +401,14 @@ class MazeApp:
         self.animate_solution_step()
 
     def animate_solution_step(self):
+        # When the solution index is past the path length, exit
         if self.solve_index > len(self.path):
             return
 
+        # Redraw the maze, removing previous patches
         self.render_grid()
 
+        # Draw every cell within the path
         for i in range(self.solve_index):
             x, y = self.path[i]
             self.ax.add_patch(
@@ -335,15 +422,20 @@ class MazeApp:
 
         self.canvas.draw()
 
+        # Increment the animation index and schedule the next frame
         self.solve_index += 1
         self.solve_after_id = self.root.after(self.speed, self.animate_solution_step)
 
     def render_grid(self):
+        # Remove the previous drawings on the axes
         self.ax.clear()
 
+        # Use the animation grid if animating or the final grid if not
         grid_to_draw = self.anim_grid if self.anim_grid else self.grid
 
+        # Only draw if the grid exists
         if grid_to_draw:
+            # Retrieve the colour theme
             theme = self.themes[self.current_theme]
 
             draw_maze_base(
@@ -359,10 +451,18 @@ class MazeApp:
 
             self.ax.set_aspect("equal")
             self.ax.axis("off")
+            
+            # Refresh the canvas display (before it was only drawn on the axes)
             self.canvas.draw()
 
+# If the file is not imported and executed direction, run the application
 if __name__ == "__main__":
+    # Create the root tkinter window
     root = tk.Tk()
+    
+    # Instantiate the application and populate the window
     app = MazeApp(root)
+    
+    # Begin the main event loop (listening for user inputs, etc)
     root.mainloop()
     
