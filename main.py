@@ -54,7 +54,8 @@ class MazeApp:
         self.anim_grid = None # Grid being animated during generation
         self.anim_index = 0 # Step within generation animation
         self.gen_after_id = None
-        self.speed = 10 # Animation delay (ms)
+        self.delay_var = tk.DoubleVar(value=10) # Animation delay (ms)
+        self.delay = int(self.delay_var.get())
         self.wall_lines = None
         
         # Saving booleans
@@ -111,6 +112,7 @@ class MazeApp:
         style.configure("TCombobox", padding=6)
         style.configure("TButton", font=("Arial", 11), padding=6)
         style.configure("Section.TLabel", font=("Arial", 13, "bold")) # Custom class for section headers
+        style.configure("Scale.TLabel", font=("Arial", 9))
 
         self.main_frame = tk.Frame(root)
         self.main_frame.pack(fill="both", expand=True) # Expands to fill root window
@@ -161,9 +163,6 @@ class MazeApp:
         
         # Set initial combo option
         self.generation_algorithm.current(0)
-        
-        # TODO: This is meant to expand the height of the dropdown. I don't think it did anything.
-        self.generation_algorithm["height"] = 5
         self.generation_algorithm.pack(fill="x", pady=(0, 20))
         
         ttk.Label(inner, text="Solving").pack(anchor="w")
@@ -178,9 +177,6 @@ class MazeApp:
         
         # Increase the font size of dropdown menu
         self.root.option_add("*TCombobox*Listbox*Font", ("Arial", 11))
-        
-        # TODO: This is meant to expand the height of the dropdown. I don't think it did anything.
-        self.solving_algorithm["height"] = 5
         self.solving_algorithm.pack(fill="x", pady=(0, 20))
 
         # Actions sections
@@ -220,6 +216,29 @@ class MazeApp:
             command=self.toggle_theme # Has a callback function because everythign must be redrawn instantly
         ).pack(anchor="w", pady=(5, 5))
         
+        # Create the animation delay slider 
+        animation_delay_text = ttk.Label(
+            inner,
+            text=f"Animation Delay: {self.delay}",
+            style="Scale.TLabel"
+        )
+        
+        animation_delay_text.pack(anchor="w", pady=(10, 0))
+
+        def update_animation_delay_label(val):
+            self.delay = int(float(val))
+            animation_delay_text.config(text=f"Animation Delay: {self.delay}")
+        
+        animation_delay = ttk.Scale(
+            inner,
+            variable=self.delay_var,
+            from_=10,
+            to=500,
+            command=update_animation_delay_label
+        )
+        
+        animation_delay.pack(anchor="w", pady=(0, 5))
+                
         # Commands sections
         ttk.Label(inner, text="Commands", style="Section.TLabel").pack(anchor="w")
         
@@ -265,6 +284,7 @@ class MazeApp:
         # Animation frames
         self.gen_frames = []
         self.solve_frames = []
+        
         
     def apply_theme(self):
         # Retrieve the colour dictionary for the current theme
@@ -511,9 +531,9 @@ class MazeApp:
             image = np.asarray(self.canvas.buffer_rgba())
             self.gen_frames.append(image.copy())
 
-        # Recall itself after the dealy (speed in ms)
+        # Recall itself after the dealy (delay in ms)
         # ID must be stored for cancellation
-        self.gen_after_id = self.root.after(self.speed, self.animate_generation_step)
+        self.gen_after_id = self.root.after(self.delay, self.animate_generation_step)
 
     def solve_maze(self):
         # Retrieve the corresponding algorithm from the combobox
@@ -654,7 +674,7 @@ class MazeApp:
 
         # Increment the animation index and schedule the next frame
         self.solve_index += 1
-        self.solve_after_id = self.root.after(self.speed, self.animate_solution_step)
+        self.solve_after_id = self.root.after(self.delay, self.animate_solution_step)
 
     def render_grid(self):
         # Remove the previous drawings on the axes
