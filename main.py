@@ -49,14 +49,17 @@ class MazeApp:
         self.solution_steps = []  # List of exploration/backtrack steps for solution animation
 
         self.solve_index = 0 # Current step within solution animation
-        self.solve_after_id = None # Tkinter timer ID; allows for solution animation cancellation
+        
+        # Tkinter timer ID/ID for function call, allowing cancellation of the call
+        self.solve_after_id = None
+        self.gen_after_id = None
         
         self.anim_grid = None # Grid being animated during generation
         self.anim_index = 0 # Step within generation animation
-        self.gen_after_id = None
         self.delay_var = tk.DoubleVar(value=10) # Animation delay (ms)
         self.delay = int(self.delay_var.get())
         self.wall_lines = None
+        self.is_paused = False
         
         # Saving booleans
         self.save_generation = tk.BooleanVar(value=False)
@@ -67,6 +70,15 @@ class MazeApp:
         # Track whether generation and solutions should be animated
         self.animate_generation = tk.BooleanVar(value=True)
         self.animate_solution = tk.BooleanVar(value=True)
+        
+        self.algorithm_info = {
+            "DFS": "Depth-First Search:\n- Long corridors\n- Few branches\n- Fast generation",
+            "Prim's": "Prim’s Algorithm:\n- Random, dense maze\n- Many branches\n- Uniform distribution",
+            "Binary Tree": "Binary Tree:\n- Very fast\n- Strong directional bias\n- Less interesting structure",
+            "BFS": "Breadth-First Search:\n- Guarantees shortest path\n- Explores broadly",
+            "DFS_solve": "DFS Solve:\n- Not guaranteed shortest\n- Explores deeply",
+            "A*": "A* Search:\n- Uses heuristic (Manhattan)\n- Fast and optimal"
+        }
         
         self.themes = {
             "light": {
@@ -123,6 +135,7 @@ class MazeApp:
         # Right column expands into extra space (maze display)
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(2, weight=0)  # info panel (smaller)
 
         # Create fixed control frame within the left column of the main frame
         control_frame = tk.Frame(self.main_frame, width=240)
@@ -163,7 +176,7 @@ class MazeApp:
         
         # Set initial combo option
         self.generation_algorithm.current(0)
-        self.generation_algorithm.pack(fill="x", pady=(0, 20))
+        self.generation_algorithm.pack(fill="x", pady=(0, 10))
         
         ttk.Label(inner, text="Solving").pack(anchor="w")
         self.solving_algorithm = ttk.Combobox(
@@ -177,7 +190,7 @@ class MazeApp:
         
         # Increase the font size of dropdown menu
         self.root.option_add("*TCombobox*Listbox*Font", ("Arial", 11))
-        self.solving_algorithm.pack(fill="x", pady=(0, 20))
+        self.solving_algorithm.pack(fill="x", pady=(0, 10))
 
         # Actions sections
         ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
@@ -242,6 +255,10 @@ class MazeApp:
         # Commands sections
         ttk.Label(inner, text="Commands", style="Section.TLabel").pack(anchor="w")
         
+        # Pause and resume buttons
+        ttk.Button(inner, text="Pause", command=self.pause_animation).pack(fill="x", pady=(0, 5))
+        ttk.Button(inner, text="Resume", command=self.resume_animation).pack(fill="x", pady=(0, 5))
+        
         # Generation command check buttons
         command_info = [("Save Generation Animation", self.save_generation),
                         ("Save Solving Animation", self.save_solving),
@@ -264,6 +281,25 @@ class MazeApp:
         
         # Embed within the right column, allowing it to stretch in all directions
         self.canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
+        
+        # Create the info frame
+        info_frame = tk.Frame(self.main_frame, width=250)
+        info_frame.grid(row=0, column=2, sticky="ns")
+        info_frame.grid_propagate(False)
+
+        info_inner = tk.Frame(info_frame, padx=15, pady=15)
+        info_inner.pack(fill="both", expand=True)
+        
+        ttk.Label(info_inner, text="Algorithm Info", style="Section.TLabel").pack(anchor="w")
+
+        # Algorithm info
+        self.info_label = ttk.Label(info_inner, text="", wraplength=200)
+        self.info_label.pack(anchor="w", pady=(0, 10))
+        
+        self.generation_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
+        self.solving_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
+        
+        self.update_algorithm_info()
         
         # Apply the initial theme (light mode) before display
         self.apply_theme()
@@ -455,6 +491,10 @@ class MazeApp:
         self.animate_generation_step()
         
     def animate_generation_step(self, save=False):
+        # Do not animate when paused
+        if self.is_paused:
+            return
+    
         # If the animation has finished, render the complete grid and exit
         if self.anim_index >= len(self.steps):
             self.anim_grid = None
@@ -609,6 +649,10 @@ class MazeApp:
         entry.configure(style="TEntry")
 
     def animate_solution_step(self):
+        # Do not animate when paused
+        if self.is_paused:
+            return
+    
         # Initialize on first call
         if self.solve_index == 0:
             self.render_grid()
@@ -704,6 +748,47 @@ class MazeApp:
             
             # Refresh the canvas display (before it was only drawn on the axes)
             self.canvas.draw()
+            
+    def pause_animation(self):
+        self.is_paused = True
+
+        # Pauses either the generation or solution animation
+        if self.gen_after_id:
+            self.root.after_cancel(self.gen_after_id)
+            self.gen_after_id = None
+
+        if self.solve_after_id:
+            self.root.after_cancel(self.solve_after_id)
+            self.solve_after_id = None
+            
+    def resume_animation(self):
+        # Resume does nothing if not paused
+        if not self.is_paused:
+            return
+
+        self.is_paused = False
+
+        # Resume generation if mid-process
+        if self.anim_grid and self.anim_index < len(self.steps):
+            self.animate_generation_step()
+
+        # Resume solving if mid-process
+        elif self.solve_index < (len(self.solution_steps) + len(self.path or [])):
+            self.animate_solution_step()
+            
+    def update_algorithm_info(self, event=None):
+        gen_algo = self.generation_algorithm.get()
+        solve_algo = self.solving_algorithm.get()
+
+        gen_text = self.algorithm_info.get(gen_algo, "")
+        
+        # Fix DFS naming clash
+        solve_key = solve_algo if solve_algo != "DFS" else "DFS_solve"
+        solve_text = self.algorithm_info.get(solve_key, "")
+
+        self.info_label.config(
+            text=f"Generation:\n{gen_text}\n\nSolving:\n{solve_text}"
+        )
 
 # If the file is not imported and executed direction, run the application
 if __name__ == "__main__":
