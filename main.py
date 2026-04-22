@@ -46,7 +46,8 @@ class MazeApp:
         self.anim_grid = None # Grid being animated during generation
         self.anim_index = 0 # Step within generation animation
         self.gen_after_id = None
-        self.speed = 10 # Animation delay (ms); TODO: Either this is too slow or animation is unoptimized
+        self.speed = 10 # Animation delay (ms)
+        self.wall_lines = None
         
         # Track whether generation and solutions should be animated
         self.animate_generation = tk.BooleanVar(value=True)
@@ -414,7 +415,30 @@ class MazeApp:
 
         # Move to the next step and draw the maze with the current state
         self.anim_index += 1
-        self.render_grid()
+        
+        draw_y = self.height - 1 - current.y
+        
+        # Retrieve the colour dictionary for the current theme
+        theme = self.themes[self.current_theme]
+        
+        # Remove wall visually by deleting the line
+        if dx == 1:
+            self.wall_lines[(current.x, current.y)]["left"].remove()
+            self.wall_lines[(neighbor.x, neighbor.y)]["right"].remove()
+
+        elif dx == -1:
+            self.wall_lines[(current.x, current.y)]["right"].remove()
+            self.wall_lines[(neighbor.x, neighbor.y)]["left"].remove()
+
+        elif dy == 1:
+            self.wall_lines[(current.x, current.y)]["top"].remove()
+            self.wall_lines[(neighbor.x, neighbor.y)]["bottom"].remove()
+
+        elif dy == -1:
+            self.wall_lines[(current.x, current.y)]["bottom"].remove()
+            self.wall_lines[(neighbor.x, neighbor.y)]["top"].remove()
+            
+        self.canvas.draw()
 
         # Recall itself after the dealy (speed in ms)
         # ID must be stored for cancellation
@@ -548,7 +572,7 @@ class MazeApp:
             # Retrieve the colour theme
             theme = self.themes[self.current_theme]
 
-            draw_maze_base(
+            self.wall_lines = draw_maze_base(
                 self.ax,
                 grid_to_draw,
                 self.width,

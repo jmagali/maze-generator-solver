@@ -24,6 +24,8 @@ def draw_maze_base(
     exit_color="red",
     wall_width=2
 ):
+    wall_lines = {}
+    
     # Loops through each cell in the grid
     for x in range(width):
         for y in range(height):
@@ -34,17 +36,23 @@ def draw_maze_base(
             draw_y = height - 1 - y
 
             # Draws the walls for each cell
+            wall_lines[(x, y)] = {}
+
             if cell.walls["top"]:
-                ax.plot([x, x+1], [draw_y+1, draw_y+1], color=wall_color, lw=wall_width)
+                line, = ax.plot([x, x+1], [draw_y+1, draw_y+1], color=wall_color, lw=wall_width)
+                wall_lines[(x, y)]["top"] = line
 
             if cell.walls["bottom"]:
-                ax.plot([x, x+1], [draw_y, draw_y], color=wall_color, lw=wall_width)
+                line, = ax.plot([x, x+1], [draw_y, draw_y], color=wall_color, lw=wall_width)
+                wall_lines[(x, y)]["bottom"] = line
 
             if cell.walls["left"]:
-                ax.plot([x, x], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+                line, = ax.plot([x, x], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+                wall_lines[(x, y)]["left"] = line
 
             if cell.walls["right"]:
-                ax.plot([x+1, x+1], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+                line, = ax.plot([x+1, x+1], [draw_y, draw_y+1], color=wall_color, lw=wall_width)
+                wall_lines[(x, y)]["right"] = line
 
     # Entrance (top-left)
     ax.plot([0, 0], [height-1, height], color=entrance_color, linewidth=wall_width)
@@ -52,78 +60,4 @@ def draw_maze_base(
     # Exit (bottom-right)
     ax.plot([width, width], [0, 1], color=exit_color, linewidth=wall_width)
     
-# def animate_solution(grid, width, height, path, save=False):
-#     fig, ax = plt.subplots()
-
-#     draw_maze_base(ax, grid, width, height)
-
-#     highlights = []
-
-#     def update(i):
-#         for h in highlights:
-#             h.remove()
-#         highlights.clear()
-
-#         for (x, y) in path[:i]:
-#             rect = plt.Rectangle(
-#                 (x, height - 1 - y),
-#                 1,
-#                 1,
-#                 color="red",
-#                 alpha=0.25
-#             )
-#             ax.add_patch(rect)
-#             highlights.append(rect)
-
-#         return highlights
-    
-#     cells = width * height
-
-#     fig.ani = animation.FuncAnimation(
-#         fig,
-#         update,
-#         frames=len(path) + 1,
-#         interval=max(0, min(120, 1000 / cells)),
-#         blit=False,
-#         repeat=False
-#     )
-
-#     ax.set_aspect("equal")
-#     ax.axis("off")
-
-#     if save:
-#         fig.ani.save("maze_solver.gif", writer="pillow", fps=30)
-
-#     plt.show(block=True)
-    
-# def animate_generation(grid, width, height, steps, save=False):
-#     fig, ax = plt.subplots()
-
-#     def update(i):
-#         ax.clear()
-
-#         for x in range(width):
-#             for y in range(height):
-#                 grid[x][y].reset_walls()
-
-#         for current, neighbor in steps[:i]:
-#             remove_walls(current, neighbor)
-
-#         draw_maze_base(ax, grid, width, height)
-
-#         ax.set_aspect("equal")
-#         ax.axis("off")
-
-#     ani = animation.FuncAnimation(
-#         fig,
-#         update,
-#         frames=len(steps) + 1,
-#         interval=10,
-#         repeat=False
-#     )
-    
-#     if save:
-#         ani.save("maze_generation.gif", writer="pillow", fps=30)
-
-#     plt.show(block=False)
-#     plt.close(fig)
+    return wall_lines
