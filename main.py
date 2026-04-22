@@ -123,7 +123,7 @@ class MazeApp:
         style.configure("TEntry", padding=8)
         style.configure("TCombobox", padding=6)
         style.configure("TButton", font=("Arial", 11), padding=6)
-        style.configure("Section.TLabel", font=("Arial", 13, "bold")) # Custom class for section headers
+        style.configure("Section.TLabel", font=("Arial", 15, "bold")) # Custom class for section headers
         style.configure("Scale.TLabel", font=("Arial", 9))
 
         self.main_frame = tk.Frame(root)
@@ -246,11 +246,11 @@ class MazeApp:
             inner,
             variable=self.delay_var,
             from_=10,
-            to=500,
+            to=1000,
             command=update_animation_delay_label
         )
         
-        animation_delay.pack(anchor="w", pady=(0, 5))
+        animation_delay.pack(fill="x", pady=(0, 5))
                 
         # Commands sections
         ttk.Label(inner, text="Commands", style="Section.TLabel").pack(anchor="w")
@@ -289,12 +289,23 @@ class MazeApp:
 
         info_inner = tk.Frame(info_frame, padx=15, pady=15)
         info_inner.pack(fill="both", expand=True)
-        
-        ttk.Label(info_inner, text="Algorithm Info", style="Section.TLabel").pack(anchor="w")
 
         # Algorithm info
-        self.info_label = ttk.Label(info_inner, text="", wraplength=200)
-        self.info_label.pack(anchor="w", pady=(0, 10))
+        ttk.Label(info_inner, text="Algorithm Info", style="Section.TLabel").pack(anchor="w")
+
+        # Generation header
+        self.gen_header = ttk.Label(info_inner, text="Generation:", font=("Arial", 11, "bold"))
+        self.gen_header.pack(anchor="w", pady=(5, 0))
+
+        self.gen_info = ttk.Label(info_inner, text="", wraplength=200)
+        self.gen_info.pack(anchor="w", pady=(0, 10))
+
+        # Solving header
+        self.solve_header = ttk.Label(info_inner, text="Solving:", font=("Arial", 11, "bold"))
+        self.solve_header.pack(anchor="w", pady=(5, 0))
+
+        self.solve_info = ttk.Label(info_inner, text="", wraplength=200)
+        self.solve_info.pack(anchor="w")
         
         self.generation_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
         self.solving_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
@@ -777,18 +788,19 @@ class MazeApp:
             self.animate_solution_step()
             
     def update_algorithm_info(self, event=None):
+        # Retrieve the algorithm
         gen_algo = self.generation_algorithm.get()
         solve_algo = self.solving_algorithm.get()
 
+        # Set the generation and solving text
         gen_text = self.algorithm_info.get(gen_algo, "")
         
-        # Fix DFS naming clash
         solve_key = solve_algo if solve_algo != "DFS" else "DFS_solve"
         solve_text = self.algorithm_info.get(solve_key, "")
 
-        self.info_label.config(
-            text=f"Generation:\n{gen_text}\n\nSolving:\n{solve_text}"
-        )
+        # Update the label
+        self.gen_info.config(text=gen_text)
+        self.solve_info.config(text=solve_text)
 
 # If the file is not imported and executed direction, run the application
 if __name__ == "__main__":
