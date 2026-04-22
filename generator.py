@@ -52,12 +52,12 @@ def generate_maze_prims(width, height):
     
     # Let the frontier be all adjacent cells not visited
     # Prim's expans from known cells to unknown cells
-    frontier = set(find_neighbords(start, grid, width, height))
+    frontier = set(find_neighbors(start, grid, width, height))
     
     while frontier:
         # Take a cell from the frontier and pair it to an adjacent visited neighbor
         current = random.choice(list(frontier))
-        neighbors = find_neighbords(current, grid, width, height)
+        neighbors = find_neighbors(current, grid, width, height)
         visited_neighbors = [n for n in neighbors if n.visited]
         neighbor = random.choice(visited_neighbors)
 
@@ -89,7 +89,7 @@ def generate_maze_dfs(width, height):
         current.visited = True
 
         # Get neighbording unvisited cells
-        neighbors = find_neighbords(current, grid, width, height)
+        neighbors = find_neighbors(current, grid, width, height)
         unvisited = [n for n in neighbors if not n.visited]
 
         # If you can keep brancing from the current, do so
@@ -132,7 +132,7 @@ def remove_walls(current, neighbor):
 def create_grid(width, height):
     return [[Cell(x, y) for y in range(height)] for x in range(width)]
     
-def find_neighbords(cell, grid, width, height):
+def find_neighbors(cell, grid, width, height):
     dirs = [(1,0), (0,1), (-1,0), (0,-1)]
 
     neighbors = []

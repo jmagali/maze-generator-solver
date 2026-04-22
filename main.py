@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox # Modern widgect styling (better than standard tkinter)
+import platform
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
@@ -12,7 +13,8 @@ from generator import (
 
 from solver import (
     solve_bfs,
-    solve_dfs
+    solve_dfs,
+    solve_a_star
 )
 
 from render import draw_maze_base
@@ -25,7 +27,11 @@ class MazeApp:
         # Set-up the window (root), title, window size
         self.root = root
         self.root.title("Maze Generator + Solver")
-        self.root.geometry("1000x600")
+        
+        if platform.system() == "Windows":
+            root.state('zoomed')
+        else:
+            root.attributes('-zoomed', True)
 
         self.grid = None
         self.width = None
@@ -148,7 +154,7 @@ class MazeApp:
         ttk.Label(inner, text="Solving").pack(anchor="w")
         self.solving_algorithm = ttk.Combobox(
             inner,
-            values=["BFS", "DFS"],
+            values=["BFS", "DFS", "A*"],
             state="readonly",
             font=("Arial", 11),
             width=18
@@ -427,6 +433,8 @@ class MazeApp:
             result = solve_bfs(self.grid, self.width, self.height)
         elif algo == "DFS":
             result = solve_dfs(self.grid, self.width, self.height)
+        elif algo == "A*":
+            result = solve_a_star(self.grid, self.width, self.height)
         
         # Extract path and steps from the result
         self.path = result["path"] if result else None

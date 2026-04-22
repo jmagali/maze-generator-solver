@@ -1,6 +1,67 @@
 from collections import deque
-from generator import find_neighbords
+from generator import find_neighbors
 import random
+import heapq
+
+# Find the shortest path by combining actual cost (distance traveled from start)
+# and a heuristic estimate (the predicted distance remaining to the goal)
+# Faster than BFS as it prioritizes 'promising' paths
+def solve_a_star(grid, width, height):
+    start = grid[0][0]
+    end = grid[-1][-1]
+    
+    counter = 0 # Tiebreaker for heap ordering
+    frontier = [(0, counter, start, [start])] # Frontier is a min-heap priority queue, as A* explores lowest prioriy first
+                                     # (priority, cell, path); priority is the actual cost + heuristic estimate
+    total_cost = {start: 0} # Maps the cost from the start to any cell (cost = # of moves)
+    steps = []
+    steps.append(("explore", start.x, start.y)) 
+    
+    # Manhattan distance (An estimate of the number of moves to the end)
+    # This heuristic is needed to predict the total cost of a path to the end
+    def heuristic(current, end):
+        return abs(current.x - end.x) + abs(current.y - end.y)
+    
+    while frontier:
+        # Retrieves the most promising cell from the frontier
+        current_cost, _, current, path = heapq.heappop(frontier)
+        
+        if current == end:
+            final_path = [(c.x, c.y) for c in path]
+            return {"path": final_path, "steps": steps}
+        
+        neighbors = find_neighbors(current, grid, width, height)
+        
+        for neighbor in neighbors:
+            dx = current.x - neighbor.x
+            dy = current.y - neighbor.y
+            
+            # Wall checks; Cannot continue moving in a direction if there is a wall
+            if dx == -1 and current.walls["right"]:
+                continue
+            if dx == 1 and current.walls["left"]:
+                continue
+            if dy == -1 and current.walls["bottom"]:
+                continue
+            if dy == 1 and current.walls["top"]:
+                continue
+            
+            # Since cost = # moves, moving to a neighbor is +1 cost
+            new_cost = total_cost[current] + 1
+            
+            # Only proceed if this cell is unvisited or a cheaper path to the end
+            if neighbor not in total_cost or new_cost < total_cost[neighbor]:
+                total_cost[neighbor] = new_cost
+                
+                # Calculates cost of the path
+                priority = new_cost + heuristic(neighbor, end)
+                
+                # The min-heap will sort the neighbor by priority automatically
+                heapq.heappush(frontier, (priority, counter, neighbor, path + [neighbor]))
+                counter += 1
+                steps.append(("explore", neighbor.x, neighbor.y))
+                
+    return {"path": None, "steps": steps}
 
 def solve_dfs(grid, width, height):    
     # Reset visited
@@ -26,7 +87,7 @@ def solve_dfs(grid, width, height):
             return {"path": final_path, "steps": steps} # Steps contains exploratory and backtracking steps
         
         # Get neighbording unvisited cells
-        neighbors = find_neighbords(current, grid, width, height)
+        neighbors = find_neighbors(current, grid, width, height)
         unvisited = [n for n in neighbors if not n.visited]
         
         # Randomize the order of unvisited neighbors for true DFS behavior
