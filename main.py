@@ -1,31 +1,33 @@
-import tkinter as tk
-from tkinter import ttk, messagebox # Modern widgect styling (better than standard tkinter)
-import platform
-import numpy as np
-
-import os
-import imageio.v2 as imageio
+# Standard Library
 from datetime import datetime
+import math
+import os
+import platform
 
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
+# Third party libraries
+import imageio.v2 as imageio
 import matplotlib.backends.backend_tkagg as tkagg
+import matplotlib.pyplot as plt
+import numpy as np
+import tkinter as tk
 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
+from tkinter import ttk, messagebox # Modern widgect styling (better than standard tkinter)
+
+# Local imports
 from generator import (
+    generate_maze_binary_tree,
     generate_maze_dfs,
-    generate_maze_prims,
-    generate_maze_binary_tree
-)
-
-from solver import (
-    solve_bfs,
-    solve_dfs,
-    solve_a_star
+    generate_maze_prims
 )
 
 from render import draw_maze_base
 
-import math
+from solver import (
+    solve_a_star,
+    solve_bfs,
+    solve_dfs
+)
 
 # GUI logic for the entire application
 class MazeApp:
