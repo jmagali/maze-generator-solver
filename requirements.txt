@@ -1,2 +1,4 @@
 matplotlib
 pillow
+imageio>=2.34.0
+numpy

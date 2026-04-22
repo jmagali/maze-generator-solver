@@ -1,9 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox # Modern widgect styling (better than standard tkinter)
 import platform
+import numpy as np
+
+import os
+import imageio.v2 as imageio
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Embeds matplotlib plots in tkinter windows
+import matplotlib.backends.backend_tkagg as tkagg
 
 from generator import (
     generate_maze_dfs,
@@ -48,6 +54,12 @@ class MazeApp:
         self.gen_after_id = None
         self.speed = 10 # Animation delay (ms)
         self.wall_lines = None
+        
+        # Saving booleans
+        self.save_generation = tk.BooleanVar(value=False)
+        self.save_solving = tk.BooleanVar(value=False)
+        self.save_maze = tk.BooleanVar(value=False)
+        self.save_solution = tk.BooleanVar(value=False)
         
         # Track whether generation and solutions should be animated
         self.animate_generation = tk.BooleanVar(value=True)
@@ -170,7 +182,7 @@ class MazeApp:
         self.solving_algorithm.pack(fill="x", pady=(0, 20))
 
         # Actions sections
-        ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(inner, text="Actions", style="Section.TLabel").pack(anchor="w", pady=(0, 5))
         
         # Checkbox widget for simplicity
         ttk.Checkbutton(
@@ -183,7 +195,7 @@ class MazeApp:
             inner,
             text="Animate Solution",
             variable=self.animate_solution
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(anchor="w", pady=(0, 5))
 
         ttk.Button(
             inner,
@@ -197,14 +209,30 @@ class MazeApp:
             command=self.solve_maze
         ).pack(fill="x", pady=(0, 5))
         
-        ttk.Label(inner, text="Aesthetics", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(inner, text="Aesthetics", style="Section.TLabel").pack(anchor="w", pady=(10, 5))
         
         ttk.Checkbutton(
             inner,
             text="Dark Mode",
             variable=self.dark_mode, # Sync to variable for state persistence
             command=self.toggle_theme # Has a callback function because everythign must be redrawn instantly
-        ).pack(anchor="w", pady=(5, 0))
+        ).pack(anchor="w", pady=(5, 5))
+        
+        # Commands sections
+        ttk.Label(inner, text="Commands", style="Section.TLabel").pack(anchor="w")
+        
+        # Generation command check buttons
+        command_info = [("Save Generation Animation", self.save_generation),
+                        ("Save Solving Animation", self.save_solving),
+                        ("Save Maze", self.save_maze),
+                        ("Save Solution", self.save_solution)]
+        
+        for text, variable in command_info:
+            ttk.Checkbutton(
+                inner,
+                text=text,
+                variable=variable
+            ).pack(anchor="w", pady=(0, 5))
 
         # Matplotlib integration: creates the figure (window) and axes (drawing plot)
         self.fig, self.ax = plt.subplots()
@@ -218,6 +246,23 @@ class MazeApp:
         
         # Apply the initial theme (light mode) before display
         self.apply_theme()
+        
+        # Enable zoom
+        tkagg.NavigationToolbar2Tk(self.canvas, self.root)
+        
+        # Establish export destinations
+        self.export_base = "exports"
+        self.gen_folder = os.path.join(self.export_base, "generation")
+        self.solve_folder = os.path.join(self.export_base, "solving")
+        self.img_folder = os.path.join(self.export_base, "images")
+
+        # Create folders if they don't exist
+        for folder in [self.gen_folder, self.solve_folder, self.img_folder]:
+            os.makedirs(folder, exist_ok=True)
+            
+        # Animation frames
+        self.gen_frames = []
+        self.solve_frames = []
         
     def apply_theme(self):
         # Retrieve the colour dictionary for the current theme
@@ -350,6 +395,13 @@ class MazeApp:
         else:
             self.anim_grid = None
             self.render_grid()
+            
+        # Save the final image
+        if self.save_maze.get():
+            filename = datetime.now().strftime("maze_%Y%m%d_%H%M%S.png")
+            path = os.path.join(self.img_folder, filename)
+            self.fig.savefig(path)
+            messagebox.showinfo("Export Completion", f"Saved maze image: {path}")
     
     # Create a fresh grid with all walls intact before removal in animation
     def create_empty_grid(self):
@@ -380,11 +432,23 @@ class MazeApp:
         
         self.animate_generation_step()
         
-    def animate_generation_step(self):
+    def animate_generation_step(self, save=False):
         # If the animation has finished, render the complete grid and exit
         if self.anim_index >= len(self.steps):
             self.anim_grid = None
             self.render_grid()
+
+            # Save the gif
+            if self.save_generation.get() and self.gen_frames:
+                filename = datetime.now().strftime("gen_%Y%m%d_%H%M%S.gif")
+                path = os.path.join(self.gen_folder, filename)
+
+                imageio.mimsave(path, self.gen_frames, duration=0.03)
+                messagebox.showinfo("Export Completion", f"Saved generation GIF: {path}")
+
+
+                self.gen_frames.clear()
+
             return
 
         # Retrieve the current wall removal from steps list
@@ -439,6 +503,11 @@ class MazeApp:
             self.wall_lines[(neighbor.x, neighbor.y)]["top"].remove()
             
         self.canvas.draw()
+        
+        # Save each frame
+        if self.save_generation.get():
+            image = np.asarray(self.canvas.buffer_rgba())
+            self.gen_frames.append(image.copy())
 
         # Recall itself after the dealy (speed in ms)
         # ID must be stored for cancellation
@@ -505,6 +574,14 @@ class MazeApp:
 
         self.animate_solution_step()
         
+        # Save the gif
+        if self.save_solution.get():
+            filename = datetime.now().strftime("solution_%Y%m%d_%H%M%S.png")
+            path = os.path.join(self.img_folder, filename)
+            self.fig.savefig(path)
+            messagebox.showinfo("Export Completion", f"Saved solution image: {path}")
+
+        
     def remove_error_styling(self, key, entry):
         # Reset entry style on input:
         entry.configure(style="TEntry")
@@ -525,6 +602,18 @@ class MazeApp:
         
         # When the animation index is past the total steps, exit
         if self.solve_index >= total_steps:
+            
+            # Save the gif
+            if self.save_solving.get() and self.solve_frames:
+                filename = datetime.now().strftime("solve_%Y%m%d_%H%M%S.gif")
+                path = os.path.join(self.solve_folder, filename)
+
+                imageio.mimsave(path, self.solve_frames, duration=0.03)
+                messagebox.showinfo("Export Completion", f"Saved solving GIF: {path}")
+
+
+                self.solve_frames.clear()
+                
             return
         
         # Draw exploration steps first (lighter color)
@@ -555,6 +644,11 @@ class MazeApp:
                     alpha=0.3))
 
         self.canvas.draw()
+        
+        # Save each frame
+        if self.save_solving.get():
+            image = np.asarray(self.canvas.buffer_rgba())
+            self.solve_frames.append(image.copy())
 
         # Increment the animation index and schedule the next frame
         self.solve_index += 1
