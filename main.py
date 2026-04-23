@@ -3,6 +3,7 @@ from datetime import datetime
 import math
 import os
 import platform
+import time
 
 # Third party libraries
 import imageio.v2 as imageio
@@ -60,6 +61,10 @@ class MazeApp:
         self.delay = int(self.delay_var.get())
         self.wall_lines = None
         self.is_paused = False
+        
+        # Timer info
+        self.generate_time = None
+        self.solve_time = None
         
         # Saving booleans
         self.save_generation = tk.BooleanVar(value=False)
@@ -125,6 +130,7 @@ class MazeApp:
         style.configure("TButton", font=("Arial", 11), padding=6)
         style.configure("Section.TLabel", font=("Arial", 15, "bold")) # Custom class for section headers
         style.configure("Scale.TLabel", font=("Arial", 9))
+        style.configure("InfoHeadings.TLabel", font=("Arial", 11, "bold"))
 
         self.main_frame = tk.Frame(root)
         self.main_frame.pack(fill="both", expand=True) # Expands to fill root window
@@ -294,14 +300,14 @@ class MazeApp:
         ttk.Label(info_inner, text="Algorithm Info", style="Section.TLabel").pack(anchor="w")
 
         # Generation header
-        self.gen_header = ttk.Label(info_inner, text="Generation:", font=("Arial", 11, "bold"))
+        self.gen_header = ttk.Label(info_inner, text="Generation:", style="InfoHeadings.TLabel")
         self.gen_header.pack(anchor="w", pady=(5, 0))
 
         self.gen_info = ttk.Label(info_inner, text="", wraplength=200)
         self.gen_info.pack(anchor="w", pady=(0, 10))
 
         # Solving header
-        self.solve_header = ttk.Label(info_inner, text="Solving:", font=("Arial", 11, "bold"))
+        self.solve_header = ttk.Label(info_inner, text="Solving:", style="InfoHeadings.TLabel")
         self.solve_header.pack(anchor="w", pady=(5, 0))
 
         self.solve_info = ttk.Label(info_inner, text="", wraplength=200)
@@ -309,6 +315,17 @@ class MazeApp:
         
         self.generation_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
         self.solving_algorithm.bind("<<ComboboxSelected>>", self.update_algorithm_info)
+        
+        # Runtime information
+        self.gen_runtime_header = ttk.Label(info_inner, text="Generation Runtime:", style="InfoHeadings.TLabel")
+        self.gen_runtime_header.pack(anchor="w", pady=(5, 0))
+        self.gen_runtime_info = ttk.Label(info_inner, text="N/A", wraplength=200)
+        self.gen_runtime_info.pack(anchor="w", pady=(0, 10))
+        
+        self.solve_runtime_header = ttk.Label(info_inner, text="Solution Runtime:", style="InfoHeadings.TLabel")
+        self.solve_runtime_header.pack(anchor="w", pady=(5, 0))
+        self.solve_runtime_info = ttk.Label(info_inner, text="N/A", wraplength=200)
+        self.solve_runtime_info.pack(anchor="w", pady=(0, 10))
         
         self.update_algorithm_info()
         
@@ -436,6 +453,9 @@ class MazeApp:
         return None, None, error_messages
     
     def generate_maze(self):
+        # Start timer
+        start = time.perf_counter()
+        
         # Retrieve the selected algorithm from the combobox
         algo = self.generation_algorithm.get()
         
@@ -455,6 +475,13 @@ class MazeApp:
         else:
             self.grid, self.width, self.height, self.steps = generate_maze_binary_tree(width, height)
 
+        # End timer
+        end = time.perf_counter()
+        timer = end - start
+        
+        # Update runtime info
+        self.gen_runtime_info.configure(text=f"{round(timer, 5)}s")
+        
         # Clears the previous solution; different mazes need different solutions
         self.path = None
 
@@ -587,6 +614,9 @@ class MazeApp:
         self.gen_after_id = self.root.after(self.delay, self.animate_generation_step)
 
     def solve_maze(self):
+        # Start timer
+        start = time.perf_counter()
+        
         # Retrieve the corresponding algorithm from the combobox
         algo = self.solving_algorithm.get()
         
@@ -601,6 +631,13 @@ class MazeApp:
             result = solve_dfs(self.grid, self.width, self.height)
         elif algo == "A*":
             result = solve_a_star(self.grid, self.width, self.height)
+                
+        # End timer
+        end = time.perf_counter()
+        timer = end - start
+        
+        # Update runtime info
+        self.solve_runtime_info.configure(text=f"{round(timer, 5)}s")
         
         # Extract path and steps from the result
         self.path = result["path"] if result else None
