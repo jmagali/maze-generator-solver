@@ -148,7 +148,7 @@ class MazeApp:
         control_frame.grid(row=0, column=0, sticky="ns")
         control_frame.grid_propagate(False) # Prevent frame from shrinking to fit children
 
-        # Adds 'breayjomg room' around controls
+        # Adds 'breathing room' around controls
         inner = tk.Frame(control_frame, padx=20, pady=20)
         inner.pack(fill="both", expand=True)
 
@@ -463,7 +463,7 @@ class MazeApp:
     def generate_maze(self):
         # Start timer
         start = time.perf_counter()
-        
+                
         # Retrieve the selected algorithm from the combobox
         algo = self.generation_algorithm.get()
         
@@ -488,7 +488,10 @@ class MazeApp:
         timer = end - start
         
         # Update runtime info
-        self.gen_runtime_info.configure(text=f"{round(timer, 5)}s")
+        total_cells = self.width * self.height
+        self.gen_runtime_info.configure(
+            text=f"{round(timer, 5)}s | Cells: {total_cells} | Steps: {len(self.steps)}"
+        )
         
         # Clears the previous solution; different mazes need different solutions
         self.path = None
@@ -499,7 +502,7 @@ class MazeApp:
         else:
             self.anim_grid = None
             self.render_grid()
-            
+                        
         # Save the final image
         if self.save_maze.get():
             filename = datetime.now().strftime("maze_%Y%m%d_%H%M%S.png")
@@ -622,9 +625,8 @@ class MazeApp:
         self.gen_after_id = self.root.after(self.delay, self.animate_generation_step)
 
     def solve_maze(self):
-        # If the maze is still generating, cancel
         if self.anim_grid:
-            return 
+            return
         
         # Start timer
         start = time.perf_counter()
