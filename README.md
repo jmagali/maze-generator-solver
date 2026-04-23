@@ -2,21 +2,34 @@
 
 <i>A procedural maze generator and solver with animated visualization using graph traversal algorithms.</i>
 
-This project generates perfect mazes using Depth-First Search (DFS) and Prim’s algorithm, then solves them using Breadth-First Search (BFS). Both generation and solving can be visualized step-by-step and exported as GIF animations.
+This project generates perfect mazes using Depth-First Search (DFS), Prim’s algorithm, and a Binary Tree algorithm, and solves them using Breadth-First Search (BFS), Depth-First Search (DFS), and A* search. Both processes are visualized step-by-step and can be exported as GIF animations.
 
-<p align="center">  <img src="img/maze_solver.gif" alt="Maze Solver Animation"/> <img src="img/maze_generation.gif" alt="Maze Generation Animation"/> </p>
+<p align="center">
+  <img src="exports\solving\solve_20260422_103304.gif" alt="Maze Solver Animation"/>
+  <img src="exports\generation\gen_20260422_103225.gif" alt="Maze Generation Animation"/>
+<img src="exports\images\Screenshot 2026-04-22 224310.png" alt="Application UI"/>
+</p>
+
+---
 
 ## Features
-- Maze generation using:
-   - Depth-First Search (DFS) backtracking
-   - Randomized Prim’s algorithm
-- Guaranteed perfect mazes (one unique path between any two cells)
-- Maze solving using Breadth-First Search (BFS)
-- Step-by-step generation and solving animations
-- Red path highlighting for solution visualization
-- GIF export for both generation and solving
-- Adaptive animation speed based on maze size
 
+- Procedural generation of perfect mazes (no cycles, fully connected graph)
+- Maze generation algorithms:
+  - Depth-First Search (recursive backtracking)
+  - Randomized Prim’s algorithm
+  - Binary Tree algorithm (fast, biased structure)
+- Pathfinding algorithms:
+  - Breadth-First Search (optimal shortest path)
+  - Depth-First Search (non-optimal exploration)
+  - A* search (heuristic-guided shortest path)
+- Real-time visualization of:
+  - Maze generation process
+  - Pathfinding exploration and solution path
+- Animated rendering with exploration and solution overlays
+- Export of generation and solving animations as GIFs
+- Adjustable animation speed based on maze size
+  
 ## Installation
 ### Requirements
 - **Python 3.10 — 3.12** recommended
