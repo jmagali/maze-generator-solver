@@ -226,6 +226,12 @@ class MazeApp:
             command=self.solve_maze
         ).pack(fill="x", pady=(0, 5))
         
+        ttk.Button(
+            inner,
+            text="Clear Maze",
+            command=self.clear_maze
+        ).pack(fill="x", pady=(0, 5))
+        
         ttk.Label(inner, text="Aesthetics", style="Section.TLabel").pack(anchor="w", pady=(10, 5))
         
         ttk.Checkbutton(
@@ -443,6 +449,8 @@ class MazeApp:
         elif height < 1:
             self.height_entry.configure(style="Error.TEntry")
             error_messages.append("Maze must be at least 1x1.\n")
+        elif (width > 200 or height > 200) and width != float('inf') and height != float('inf'):
+            error_messages.append("Max size is 200x200.\n")
         
         # Remove error styling if there are no errors
         if not error_messages:
@@ -614,6 +622,10 @@ class MazeApp:
         self.gen_after_id = self.root.after(self.delay, self.animate_generation_step)
 
     def solve_maze(self):
+        # If the maze is still generating, cancel
+        if self.anim_grid:
+            return 
+        
         # Start timer
         start = time.perf_counter()
         
@@ -636,12 +648,16 @@ class MazeApp:
         end = time.perf_counter()
         timer = end - start
         
-        # Update runtime info
-        self.solve_runtime_info.configure(text=f"{round(timer, 5)}s")
-        
         # Extract path and steps from the result
         self.path = result["path"] if result else None
         self.solution_steps = result["steps"] if result else []
+        
+        cells_explored = len([s for s in self.solution_steps if s[0] == "explore"])
+        path_length = len(self.path) if self.path else 0
+
+        self.solve_runtime_info.configure(
+            text=f"{round(timer, 5)}s | Explored: {cells_explored} | Path: {path_length}"
+        )
 
         if not self.animate_solution.get():
             # Instant draw
@@ -838,6 +854,15 @@ class MazeApp:
         # Update the label
         self.gen_info.config(text=gen_text)
         self.solve_info.config(text=solve_text)
+    
+    def clear_maze(self):
+        self.grid = None
+        self.anim_grid = None
+        self.path = None
+        self.ax.clear()
+        self.ax.set_aspect("equal")
+        self.ax.axis("off")
+        self.canvas.draw()
 
 # If the file is not imported and executed direction, run the application
 if __name__ == "__main__":
